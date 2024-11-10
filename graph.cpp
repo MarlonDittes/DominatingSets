@@ -5,8 +5,8 @@
 Graph::Graph(int vertices) : vertices(vertices), adj(vertices) {}
 
 void Graph::addEdge(int u, int v) {
-    adj[u].push_back(v);
-    adj[v].push_back(u);  // Undirected graph, so add edge in both directions
+    adj[u-1].push_back(v-1); // Assuming 1-based index in the .gr file, converting to 0-based
+    adj[v-1].push_back(u-1);  // Undirected graph, so add edge in both directions
 }
 
 std::vector<int> Graph::greedyDominatingSet() {
@@ -51,4 +51,25 @@ std::vector<int> Graph::greedyDominatingSet() {
     }
 
     return dominatingSet;
+}
+
+void Graph::graphToHypergraph(const std::string& outputFile) const{
+    std::ofstream file(outputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open the output file!");
+    }
+
+    // Writing the hypergraph in custom text format described in README.md of https://github.com/Felerius/findminhs
+    file << vertices << " " << vertices << "\n"; // num_vertices num_hyperedges
+
+    for (int u = 0; u < vertices; ++u) {
+        // Insert closed neighborhoods of each vertex as hyperedge
+        file << adj[u].size() + 1 << " "; // size of the closed neighborhood
+        for (int v : adj[u]) {
+            file << v << " "; // print each node in the neighborhood
+        }
+        file << u << "\n"; // Include the vertex itself
+    }
+
+    file.close();
 }
