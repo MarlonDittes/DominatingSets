@@ -1,12 +1,14 @@
-# Minimum CMake version requirement
 cmake_minimum_required(VERSION 3.10)
-
-# Project name and version
 project(DominatingSetProblem VERSION 1.0)
 
-# Set the C++ standard
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Add the executable target
+set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Debug)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wall -Wextra)
+endif()
+
 add_executable(main main.cpp graph.cpp)
