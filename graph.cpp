@@ -73,3 +73,56 @@ void Graph::graphToHypergraph(const std::string& outputFile) const{
 
     file.close();
 }
+
+// DFS helper function to traverse and collect nodes in a connected component
+void Graph::dfs(int node, std::vector<bool>& visited, std::vector<int>& component) const {
+    visited[node] = true;
+    component.push_back(node);
+
+    for (int neighbor : adj[node]) {
+        if (!visited[neighbor]) {
+            dfs(neighbor, visited, component);
+        }
+    }
+}
+
+// Function to extract connected components and return them as separate subgraphs
+std::pair<std::vector<std::vector<std::vector<int>>>, std::vector<std::vector<int>>> Graph::getConnectedComponents() const {
+    std::vector<bool> visited(vertices, false);
+    std::vector<std::vector<std::vector<int>>> connectedComponents;
+    std::vector<std::vector<int>> reverseMappings;
+
+    for (int i = 0; i < vertices; ++i) {
+        if (!visited[i]) {
+            std::vector<int> componentNodes;  // Nodes in the current connected component
+            dfs(i, visited, componentNodes);
+
+            // Create a subgraph for the current connected component
+            std::vector<std::vector<int>> subgraph(componentNodes.size());
+            std::map<int, int> oldToNew;  // Map old indices to new indices in the subgraph
+            std::vector<int> newToOld(componentNodes.size()); // Reverse map: subgraph -> old graph
+            //TODO: Change map here?
+
+            for (int j = 0; j < componentNodes.size(); ++j) {
+                oldToNew[componentNodes[j]] = j;  // Assign new indices
+                newToOld[j] = componentNodes[j];
+            }
+
+            // Populate adjacency list for the subgraph
+            for (int node : componentNodes) {
+                std::vector<int> neighborsInSubgraph;
+                for (int neighbor : adj[node]) {
+                    if (oldToNew.find(neighbor) != oldToNew.end()) {
+                        neighborsInSubgraph.push_back(oldToNew[neighbor]);
+                    }
+                }
+                subgraph[oldToNew[node]] = neighborsInSubgraph;
+            }
+
+            connectedComponents.push_back(subgraph);
+            reverseMappings.push_back(newToOld);
+        }
+    }
+
+    return std::make_pair(connectedComponents, reverseMappings);
+}

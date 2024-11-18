@@ -148,8 +148,31 @@ int main(int argc, char* argv[]) {
 
     // Output solution
     std::cout << "Findminhs solver solution:" << std::endl;
-    solution = readJsonArray("../solution.json");
+    solution = readJsonArray(solutionFile);
     outputSolution(solution);
+
+    // Test connected components
+    std::cout << std::endl;
+    auto pair = graph.getConnectedComponents();
+    auto& components = pair.first;
+    auto& reverseMappings = pair.second;
+
+    // Display the connected components
+    for (size_t i = 0; i < components.size(); ++i) {
+        std::cout << "Component " << i + 1 << " (Original Graph Nodes):\n";
+        for (size_t j = 0; j < components[i].size(); ++j) {
+            // Print the original graph node corresponding to the subgraph node
+            int originalNode = reverseMappings[i][j];
+            std::cout << "  Original Node " << originalNode << ": ";
+
+            // Map subgraph neighbors back to the original graph
+            for (int neighbor : components[i][j]) {
+                int originalNeighbor = reverseMappings[i][neighbor];
+                std::cout << originalNeighbor << " ";
+            }
+            std::cout << "\n";
+        }
+    }
 
     return 0;
 }

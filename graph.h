@@ -5,6 +5,7 @@
 #include <set>
 #include <iostream>
 #include <fstream>
+#include <map>
 
 class Graph {
 public:
@@ -13,9 +14,13 @@ public:
     std::vector<int> greedyDominatingSet();
     void graphToHypergraph(const std::string& outputFile) const;
 
+    std::pair<std::vector<std::vector<std::vector<int>>>, std::vector<std::vector<int>>> getConnectedComponents() const;
+
 private:
     int vertices;                       // Number of vertices in the graph
     std::vector<std::vector<int>> adj;  // Adjacency list representation
+
+    void dfs(int node, std::vector<bool>& visited, std::vector<int>& component) const;
 };
 
 #endif // GRAPH_H
