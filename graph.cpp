@@ -1,6 +1,4 @@
 #include "graph.h"
-#include <algorithm>  // For std::max
-#include <unordered_map>
 
 Graph::Graph(int vertices) : vertices(vertices), adj(vertices) {}
 
@@ -125,4 +123,53 @@ std::pair<std::vector<std::vector<std::vector<int>>>, std::vector<std::vector<in
     }
 
     return std::make_pair(connectedComponents, reverseMappings);
+}
+
+void Graph::writeHittingSetILP(const std::string &outputFile) const {
+    std::ofstream file(outputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + outputFile);
+    }
+
+    // Write the objective function
+    file << "Minimize\n obj: ";
+    for (int i = 0; i < vertices; ++i) {
+        file << "x" << i;
+        if (i < vertices - 1) {
+            file << " + ";
+        }
+    }
+    file << "\n\nSubject To\n";
+
+    // Write the constraints (one per closed neighborhood)
+    for (int u = 0; u < vertices; ++u) {
+        file << " c" << u + 1 << ": ";
+        std::set<int> neighborhood;
+        neighborhood.insert(u); // Include the vertex itself
+        for (int v : adj[u]) {
+            neighborhood.insert(v); // Include its neighbors
+        }
+        int count = 0;
+        for (int v : neighborhood) {
+            file << "x" << v;
+            if (++count < neighborhood.size()) {
+                file << " + ";
+            }
+        }
+        file << " >= 1\n";
+    }
+
+    // Write bounds and variable types
+    file << "\nBounds\n";
+    for (int i = 0; i < vertices; ++i) {
+        file << " 0 <= x" << i << " <= 1\n";
+    }
+
+    file << "\nBinary\n";
+    for (int i = 0; i < vertices; ++i) {
+        file << " x" << i << "\n";
+    }
+
+    file << "End\n";
+    file.close();
 }

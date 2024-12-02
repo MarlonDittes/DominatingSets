@@ -125,6 +125,8 @@ int main(int argc, char* argv[]) {
     // Read graph from file
     auto graph = readGraphFromFile(graphFile);
 
+    graph.writeHittingSetILP("../test.lp");
+    /*
     // Run and output Greedy solver
     std::vector<int> solution = graph.greedyDominatingSet();
     std::cout << "Greedy solution:" << std::endl;
@@ -173,6 +175,9 @@ int main(int argc, char* argv[]) {
             std::cout << "\n";
         }
     }
+    */
+
+   
 
     return 0;
 }

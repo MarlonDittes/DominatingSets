@@ -1,0 +1,142 @@
+Running HiGHS 1.8.1 (git hash: 4a7f24ac6): Copyright (c) 2024 HiGHS under MIT licence terms
+MIP  test has 3 rows; 4 cols; 9 nonzeros; 1 integer variables
+Coefficient ranges:
+  Matrix [1e+00, 1e+01]
+  Cost   [1e+00, 3e+00]
+  Bound  [2e+00, 4e+01]
+  RHS    [2e+01, 3e+01]
+Presolving model
+2 rows, 3 cols, 6 nonzeros  0s
+2 rows, 3 cols, 6 nonzeros  0s
+
+Solving MIP model with:
+   2 rows
+   3 cols (1 binary, 0 integer, 0 implied int., 2 continuous)
+   6 nonzeros
+MIP-Timing:     0.00082 - starting analytic centre calculation
+
+Src: B => Branching; C => Central rounding; F => Feasibility pump; H => Heuristic; L => Sub-MIP;
+     P => Empty MIP; R => Randomized rounding; S => Solve LP; T => Evaluate node; U => Unbounded;
+     z => Trivial zero; l => Trivial lower; u => Trivial upper; p => Trivial point
+
+        Nodes      |    B&B Tree     |            Objective Bounds              |  Dynamic Constraints |       Work      
+Src  Proc. InQueue |  Leaves   Expl. | BestBound       BestSol              Gap |   Cuts   InLp Confl. | LpIters     Time
+
+         0       0         0   0.00%   163             -inf                 inf        0      0      0         0     0.0s
+ R       0       0         0   0.00%   125.2083333     122.5              2.21%        0      0      0         2     0.0s
+         1       0         1 100.00%   122.5000008     122.5              0.00%        0      0      0         3     0.0s
+
+Solving report
+  Model             test
+  Status            Optimal
+  Primal bound      122.5
+  Dual bound        122.500000802
+  Gap               0% (tolerance: 0.01%)
+  P-D integral      4.19584284432e-06
+  Solution status   feasible
+                    122.5 (objective)
+                    0 (bound viol.)
+                    0 (int. viol.)
+                    0 (row viol.)
+  Timing            0.00 (total)
+                    0.00 (presolve)
+                    0.00 (solve)
+                    0.00 (postsolve)
+  Max sub-MIP depth 0
+  Nodes             1
+  Repair LPs        0 (0 feasible; 0 iterations)
+  LP iterations     3 (total)
+                    0 (strong br.)
+                    1 (separation)
+                    0 (heuristics)
+Running HiGHS 1.8.1 (git hash: 4a7f24ac6): Copyright (c) 2024 HiGHS under MIT licence terms
+MIP  test has 7 rows; 7 cols; 23 nonzeros; 7 integer variables
+Coefficient ranges:
+  Matrix [1e+00, 1e+00]
+  Cost   [1e+00, 1e+00]
+  Bound  [1e+00, 1e+00]
+  RHS    [1e+00, 1e+00]
+Presolving model
+7 rows, 7 cols, 23 nonzeros  0s
+3 rows, 4 cols, 7 nonzeros  0s
+0 rows, 0 cols, 0 nonzeros  0s
+Presolve: Optimal
+
+Src: B => Branching; C => Central rounding; F => Feasibility pump; H => Heuristic; L => Sub-MIP;
+     P => Empty MIP; R => Randomized rounding; S => Solve LP; T => Evaluate node; U => Unbounded;
+     z => Trivial zero; l => Trivial lower; u => Trivial upper; p => Trivial point
+
+        Nodes      |    B&B Tree     |            Objective Bounds              |  Dynamic Constraints |       Work      
+Src  Proc. InQueue |  Leaves   Expl. | BestBound       BestSol              Gap |   Cuts   InLp Confl. | LpIters     Time
+
+         0       0         0   0.00%   2               2                  0.00%        0      0      0         0     0.0s
+
+Solving report
+  Model             test
+  Status            Optimal
+  Primal bound      2
+  Dual bound        2
+  Gap               0% (tolerance: 0.01%)
+  P-D integral      0
+  Solution status   feasible
+                    2 (objective)
+                    0 (bound viol.)
+                    0 (int. viol.)
+                    0 (row viol.)
+  Timing            0.00 (total)
+                    0.00 (presolve)
+                    0.00 (solve)
+                    0.00 (postsolve)
+  Max sub-MIP depth 0
+  Nodes             0
+  Repair LPs        0 (0 feasible; 0 iterations)
+  LP iterations     0 (total)
+                    0 (strong br.)
+                    0 (separation)
+                    0 (heuristics)
+Running HiGHS 1.8.1 (git hash: 4a7f24ac6): Copyright (c) 2024 HiGHS under MIT licence terms
+MIP  test has 7 rows; 7 cols; 23 nonzeros; 7 integer variables
+Coefficient ranges:
+  Matrix [1e+00, 1e+00]
+  Cost   [1e+00, 1e+00]
+  Bound  [1e+00, 1e+00]
+  RHS    [1e+00, 1e+00]
+Presolving model
+7 rows, 7 cols, 23 nonzeros  0s
+3 rows, 4 cols, 7 nonzeros  0s
+0 rows, 0 cols, 0 nonzeros  0s
+Presolve: Optimal
+
+Src: B => Branching; C => Central rounding; F => Feasibility pump; H => Heuristic; L => Sub-MIP;
+     P => Empty MIP; R => Randomized rounding; S => Solve LP; T => Evaluate node; U => Unbounded;
+     z => Trivial zero; l => Trivial lower; u => Trivial upper; p => Trivial point
+
+        Nodes      |    B&B Tree     |            Objective Bounds              |  Dynamic Constraints |       Work      
+Src  Proc. InQueue |  Leaves   Expl. | BestBound       BestSol              Gap |   Cuts   InLp Confl. | LpIters     Time
+
+         0       0         0   0.00%   2               2                  0.00%        0      0      0         0     0.0s
+
+Solving report
+  Model             test
+  Status            Optimal
+  Primal bound      2
+  Dual bound        2
+  Gap               0% (tolerance: 0.01%)
+  P-D integral      0
+  Solution status   feasible
+                    2 (objective)
+                    0 (bound viol.)
+                    0 (int. viol.)
+                    0 (row viol.)
+  Timing            0.00 (total)
+                    0.00 (presolve)
+                    0.00 (solve)
+                    0.00 (postsolve)
+  Max sub-MIP depth 0
+  Nodes             0
+  Repair LPs        0 (0 feasible; 0 iterations)
+  LP iterations     0 (total)
+                    0 (strong br.)
+                    0 (separation)
+                    0 (heuristics)
+Writing the solution to testsol
