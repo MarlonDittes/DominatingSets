@@ -4,6 +4,8 @@
 #include <array>
 #include <fstream>
 #include <sstream>
+#include <dirent.h>
+#include <cmath>
 
 #include "graph.h"
 
@@ -110,86 +112,141 @@ void outputSolution(const std::vector<int>& solution){
     }
 }
 
+void generateCSVForGraphs(const std::string& folderPath, const std::string& outputCSV) {
+    DIR* dir = opendir(folderPath.c_str());
+    if (!dir) {
+        std::cerr << "Could not open directory: " << folderPath << std::endl;
+        return;
+    }
+
+    struct dirent* entry;
+    std::ofstream csvFile(outputCSV);
+    if (!csvFile.is_open()) {
+        std::cerr << "Could not open output CSV file: " << outputCSV << std::endl;
+        return;
+    }
+
+    // Write CSV header
+    csvFile << "Name,Vertices,Edges,Density,Max Degree,Lower Bound,Upper Bound" << std::endl;
+
+    // Iterate through all files in the directory
+    while ((entry = readdir(dir)) != nullptr) {
+        std::string filename = entry->d_name;
+
+        // Only process .gr files
+        if (filename.size() >= 3 && filename.substr(filename.size() - 3) == ".gr") {
+            std::string filepath = folderPath + "/" + filename;
+            auto graph = readGraphFromFile(filepath);
+
+            //write HittingSet ILP formulation
+            //graph.writeHittingSetILP(filepath + ".lp");
+            
+            int numVertices = graph.getVertices();
+            int numEdges = graph.getEdges();
+            double density =graph.computeDensity();
+            int maxDegree = graph.getMaxDegree();
+            int lowerBound = std::ceil(graph.computeEfficiencyLowerBound());
+            auto greedySol = graph.greedyDominatingSet();
+            int upperBound = greedySol.size();
+
+            // Write the results to the CSV
+            csvFile << filename << ","
+                    << numVertices << ","
+                    << numEdges << ","
+                    << density << ","
+                    << maxDegree << ","
+                    << lowerBound << ","
+                    << upperBound << std::endl;
+            
+        }
+    }
+
+    closedir(dir);
+    csvFile.close();
+    std::cout << "CSV file generated: " << outputCSV << std::endl;
+}
+
 using std::cout;
 using std::endl;
 
 int main(int argc, char* argv[]) {
+    //generateCSVForGraphs("../graphs/testset", "../graphs/testset/properties.csv");
+
     // Ensure the correct number of arguments are provided
-    if (argc != 4) {
-        std::cerr << "Usage: " << argv[0] << " <graphfile> <solutionfile> <settingsfile>" << std::endl;
+    ///*
+    if (argc == 1) {
+        std::cerr << "Usage: " << argv[0] << " <graphfile> <solver>" << std::endl;
+        std::cerr << "Additionally for findminhs: <solutionfile> <settingsfile>" << std::endl;
         return 1;
     }
 
     // Extract file paths from command line arguments
     std::string graphFile = argv[1];
-    std::string solutionFile = argv[2];
-    std::string settingsFile = argv[3];
-
+    std::string solver = argv[2];
+    
     // Read graph from file
     auto graph = readGraphFromFile(graphFile);
 
-    //cout << graph.computeEfficiencyLowerBound() << endl;
-    cout << graph.getMaxDegree() << endl;
-    cout << graph.computeDensity() << endl;
-    cout << graph.getVertices() << endl;
-    cout << graph.getEdges() << endl;
+    bool verbose = false;
 
+    if (solver == "findminhs"){
+        std::string solutionFile = argv[3];
+        std::string settingsFile = argv[4];
 
-    //graph.writeHittingSetILP(graphFile + ".lp");
-    
-    // Run and output Greedy solver
-    /*
-    std::vector<int> solution = graph.greedyDominatingSet();
-    cout << solution.size() << endl;
-    std::cout << "Greedy solution:" << std::endl;
-    outputSolution(solution);
-    std::cout << std::endl;
+        // Convert to hypergraph format for findminhs solver by Felerius (https://github.com/Felerius/findminhs)
+        std::string hypergraphFile = "temp.hgr"; 
+        graph.graphToHypergraph(hypergraphFile);
 
-    // Convert to hypergraph format for findminhs solver by Felerius (https://github.com/Felerius/findminhs)
-    std::string hypergraphFile = "../temp.hgr"; 
-    graph.graphToHypergraph(hypergraphFile);
+        // Run findminhs and capture output
+        std::string command = "./findminhs-linux64 solve --solution " + solutionFile + " " + hypergraphFile + " " + settingsFile;
 
-    // Run findminhs and capture output
-    std::string solverName = "../findminhs-linux64";
-    std::string command = solverName + " solve --solution " + solutionFile + " " + hypergraphFile + " " + settingsFile;
+        std::string output = exec(command);
+        if (verbose){
+            std::cout << output;
+            std::cout << std::endl;
+        }
+  
 
-    std::string output = exec(command);
-    std::cout << output;
-    std::cout << std::endl;
+        // Delete temporary hypergraph file
+        std::remove(hypergraphFile.c_str());
 
-    // Delete temporary hypergraph file
-    std::remove(hypergraphFile.c_str());
-
-    // Output solution
-    std::cout << "Findminhs solver solution:" << std::endl;
-    solution = readJsonArray(solutionFile);
-    outputSolution(solution);
-
-    // Test connected components
-    std::cout << std::endl;
-    auto pair = graph.getConnectedComponents();
-    auto& components = pair.first;
-    auto& reverseMappings = pair.second;
-
-    // Display the connected components
-    for (size_t i = 0; i < components.size(); ++i) {
-        std::cout << "Component " << i + 1 << " (Original Graph Nodes):\n";
-        for (size_t j = 0; j < components[i].size(); ++j) {
-            // Print the original graph node corresponding to the subgraph node
-            int originalNode = reverseMappings[i][j];
-            std::cout << "  Original Node " << originalNode << ": ";
-
-            // Map subgraph neighbors back to the original graph
-            for (int neighbor : components[i][j]) {
-                int originalNeighbor = reverseMappings[i][neighbor];
-                std::cout << originalNeighbor << " ";
-            }
-            std::cout << "\n";
+        // Output solution
+        if (verbose){
+            std::cout << "Findminhs solver solution:" << std::endl;
+            auto solution = readJsonArray(solutionFile);
+            outputSolution(solution);
         }
     }
-    */
 
-   
+    if (solver == "highs"){
+        std::string lpFile = "temp.lp";
+        graph.writeHittingSetILP(lpFile);
 
+        std::string command = "./highs " + lpFile;
+        std::string output = exec(command);
+        if (verbose){
+            std::cout << output;
+            std::cout << std::endl;
+        }
+
+        std::remove(lpFile.c_str());
+    }
+
+    if (solver == "scip"){
+        std::string lpFile = "temp.lp";
+        graph.writeHittingSetILP(lpFile);
+
+        std::string command = "scip -f " + lpFile;
+        std::string output = exec(command);
+        if (verbose){
+            std::cout << output;
+            std::cout << std::endl;
+        }
+
+        std::remove(lpFile.c_str());
+    }
+    
+    //*/
+    
     return 0;
 }
