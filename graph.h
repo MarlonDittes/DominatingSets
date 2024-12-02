@@ -15,6 +15,7 @@ public:
     Graph(int vertices);
     void addEdge(int u, int v);
     std::vector<int> greedyDominatingSet();
+    double computeEfficiencyLowerBound();
     void graphToHypergraph(const std::string& outputFile) const;
 
     std::pair<std::vector<std::vector<std::vector<int>>>, std::vector<std::vector<int>>> getConnectedComponents() const;

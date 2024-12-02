@@ -51,6 +51,25 @@ std::vector<int> Graph::greedyDominatingSet() {
     return dominatingSet;
 }
 
+double Graph::computeEfficiencyLowerBound(){
+    double lower_bound = 0.0;
+
+    // Iterate over each edge in the graph
+    for (int u = 0; u < vertices; ++u) {
+        for (int v : adj[u]) {
+            if (u < v) {  // To avoid counting the edge twice (u, v) and (v, u)
+                int deg_u = adj[u].size();  
+                int deg_v = adj[v].size(); 
+                double max_deg = std::max(deg_u, deg_v);
+
+                lower_bound += 1.0 / max_deg;
+            }
+        }
+    }
+
+    return lower_bound;
+}
+
 void Graph::graphToHypergraph(const std::string& outputFile) const{
     std::ofstream file(outputFile);
     if (!file.is_open()) {

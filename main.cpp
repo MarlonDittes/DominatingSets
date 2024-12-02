@@ -110,6 +110,9 @@ void outputSolution(const std::vector<int>& solution){
     }
 }
 
+using std::cout;
+using std::endl;
+
 int main(int argc, char* argv[]) {
     // Ensure the correct number of arguments are provided
     if (argc != 4) {
@@ -125,10 +128,15 @@ int main(int argc, char* argv[]) {
     // Read graph from file
     auto graph = readGraphFromFile(graphFile);
 
-    graph.writeHittingSetILP("../test.lp");
-    /*
+    cout << graph.computeEfficiencyLowerBound() << endl;
+
+
+    //graph.writeHittingSetILP(graphFile + ".lp");
+    
     // Run and output Greedy solver
     std::vector<int> solution = graph.greedyDominatingSet();
+    cout << solution.size() << endl;
+    /*
     std::cout << "Greedy solution:" << std::endl;
     outputSolution(solution);
     std::cout << std::endl;
