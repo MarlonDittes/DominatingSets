@@ -16,6 +16,12 @@ public:
     void addEdge(int u, int v);
     std::vector<int> greedyDominatingSet();
     double computeEfficiencyLowerBound();
+    double computeDensity() const;
+    int getMaxDegree() const;
+
+    int getVertices(){return vertices;};
+    int getEdges(){return edges;};
+
     void graphToHypergraph(const std::string& outputFile) const;
 
     std::pair<std::vector<std::vector<std::vector<int>>>, std::vector<std::vector<int>>> getConnectedComponents() const;
@@ -23,7 +29,8 @@ public:
     void writeHittingSetILP(const std::string &outputFile) const;
 
 private:
-    int vertices;                       // Number of vertices in the graph
+    int vertices;
+    int edges = 0;
     std::vector<std::vector<int>> adj;  // Adjacency list representation
 
     void dfs(int node, std::vector<bool>& visited, std::vector<int>& component) const;

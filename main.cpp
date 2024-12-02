@@ -128,15 +128,19 @@ int main(int argc, char* argv[]) {
     // Read graph from file
     auto graph = readGraphFromFile(graphFile);
 
-    cout << graph.computeEfficiencyLowerBound() << endl;
+    //cout << graph.computeEfficiencyLowerBound() << endl;
+    cout << graph.getMaxDegree() << endl;
+    cout << graph.computeDensity() << endl;
+    cout << graph.getVertices() << endl;
+    cout << graph.getEdges() << endl;
 
 
     //graph.writeHittingSetILP(graphFile + ".lp");
     
     // Run and output Greedy solver
+    /*
     std::vector<int> solution = graph.greedyDominatingSet();
     cout << solution.size() << endl;
-    /*
     std::cout << "Greedy solution:" << std::endl;
     outputSolution(solution);
     std::cout << std::endl;

@@ -5,6 +5,7 @@ Graph::Graph(int vertices) : vertices(vertices), adj(vertices) {}
 void Graph::addEdge(int u, int v) {
     adj[u-1].push_back(v-1); // Assuming 1-based index in the .gr file, converting to 0-based
     adj[v-1].push_back(u-1);  // Undirected graph, so add edge in both directions
+    edges += 1;
 }
 
 std::vector<int> Graph::greedyDominatingSet() {
@@ -68,6 +69,26 @@ double Graph::computeEfficiencyLowerBound(){
     }
 
     return lower_bound;
+}
+
+double Graph::computeDensity() const {
+    // Since undirected, we have twice the amount of edges
+    int num_edges = 2 * edges;
+
+    // Compute the density: num_edges / (V * (V - 1))
+    double max_edges = vertices * (vertices - 1);
+    return num_edges / max_edges;
+}
+
+int Graph::getMaxDegree() const {
+    int max_degree = 0;
+
+    // Iterate over all vertices and find the maximum degree
+    for (int u = 0; u < adj.size(); ++u) {
+        max_degree = std::max(max_degree, static_cast<int>(adj[u].size()));
+    }
+
+    return max_degree;
 }
 
 void Graph::graphToHypergraph(const std::string& outputFile) const{
