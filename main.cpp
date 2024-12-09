@@ -6,6 +6,7 @@
 #include <sstream>
 #include <dirent.h>
 #include <cmath>
+#include <regex>
 
 #include "graph.h"
 
@@ -166,14 +167,56 @@ void generateCSVForGraphs(const std::string& folderPath, const std::string& outp
     std::cout << "CSV file generated: " << outputCSV << std::endl;
 }
 
+std::pair<double, double> parseReport(const std::string& report, const std::string& solver){
+    std::pair<double, double> result = {-1, -1}; // Default values if parsing fails
+
+    if (solver == "highs"){
+        std::regex primalBoundRegex(R"(Primal bound\s+(\d+\.?\d*))");
+        std::regex timingRegex(R"(Timing\s+([\d\.]+)\s+\(total\))");
+        
+        std::smatch match;
+
+        // Extract primal bound
+        if (std::regex_search(report, match, primalBoundRegex) && match.size() > 1) {
+            result.first = std::stod(match[1]);
+        }
+
+        // Extract total time
+        if (std::regex_search(report, match, timingRegex) && match.size() > 1) {
+            result.second = std::stod(match[1]);
+        }
+    } else if (solver == "scip"){
+        std::regex primalBoundRegex(R"(Primal Bound\s+:\s+([+-]?\d+\.?\d*(e[+-]?\d+)?))");
+        std::regex timingRegex(R"(Solving Time \(sec\)\s+:\s+([\d\.]+))");
+        
+        std::smatch match;
+
+        // Extract primal bound
+        if (std::regex_search(report, match, primalBoundRegex) && match.size() > 1) {
+            result.first = std::stod(match[1]);
+        }
+
+        // Extract total time
+        if (std::regex_search(report, match, timingRegex) && match.size() > 1) {
+            result.second = std::stod(match[1]);
+        }
+
+        return result;
+    }
+    
+
+    return result;
+}
+
 using std::cout;
 using std::endl;
 
 int main(int argc, char* argv[]) {
-    //generateCSVForGraphs("../graphs/testset", "../graphs/testset/properties.csv");
+    //std::string name = "exact-private";
+    //generateCSVForGraphs("../graphs/" + name, "../graphs/" + name + "/properties.csv");
 
-    // Ensure the correct number of arguments are provided
     ///*
+    // Ensure the correct number of arguments are provided
     if (argc == 1) {
         std::cerr << "Usage: " << argv[0] << " <graphfile> <solver>" << std::endl;
         std::cerr << "Additionally for findminhs: <solutionfile> <settingsfile>" << std::endl;
@@ -229,6 +272,9 @@ int main(int argc, char* argv[]) {
             std::cout << std::endl;
         }
 
+        auto result = parseReport(output, solver);
+        cout << result.first << "," << result.second << endl;
+
         std::remove(lpFile.c_str());
     }
 
@@ -242,10 +288,12 @@ int main(int argc, char* argv[]) {
             std::cout << output;
             std::cout << std::endl;
         }
+        
+        auto result = parseReport(output, solver);
+        cout << result.first << "," << result.second << endl;
 
         std::remove(lpFile.c_str());
     }
-    
     //*/
     
     return 0;
