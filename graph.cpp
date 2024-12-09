@@ -57,15 +57,14 @@ double Graph::computeEfficiencyLowerBound(){
 
     // Iterate over each edge in the graph
     for (int u = 0; u < vertices; ++u) {
+        int max_deg = adj[u].size() + 1;
         for (int v : adj[u]) {
-            if (u < v) {  // To avoid counting the edge twice (u, v) and (v, u)
-                int deg_u = adj[u].size();  
-                int deg_v = adj[v].size(); 
-                double max_deg = std::max(deg_u, deg_v);
-
-                lower_bound += 1.0 / max_deg;
-            }
+            int current_deg = adj[v].size() + 1;  
+            if (current_deg > max_deg){
+                max_deg = current_deg;
+            }   
         }
+        lower_bound += 1.0 / max_deg; 
     }
 
     return lower_bound;
