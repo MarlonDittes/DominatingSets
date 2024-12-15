@@ -146,7 +146,7 @@ void generateCSVForGraphs(const std::string& folderPath, const std::string& outp
             int numEdges = graph.getEdges();
             double density = graph.computeDensity();
             int maxDegree = graph.getMaxDegree();
-            int lowerBound = graph.computeEfficiencyLowerBound();
+            double lowerBound = graph.computeEfficiencyLowerBound();
             auto greedySol = graph.greedyDominatingSet();
             int upperBound = greedySol.size();
 
@@ -212,7 +212,7 @@ using std::cout;
 using std::endl;
 
 int main(int argc, char* argv[]) {
-    //std::string name = "exact-private";
+    //std::string name = "testset";
     //generateCSVForGraphs("../graphs/" + name, "../graphs/" + name + "/properties.csv");
 
     ///*
