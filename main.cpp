@@ -294,6 +294,60 @@ int main(int argc, char* argv[]) {
 
         std::remove(lpFile.c_str());
     }
+
+    if (solver == "domsat"){
+        std::string cutoff = argv[3];
+
+        // Convert to SAT format for domsat solver
+        std::string SAT_file = "temp.sat"; 
+        graph.graphToSAT(SAT_file);
+    
+        // Run domsat and capture output
+        std::string command = "./DomSAT " + SAT_file + " " + cutoff;
+
+        std::string output = exec(command);
+        std::cout << output;
+        std::cout << std::endl;
+
+        // Delete temporary hypergraph file
+        std::remove(SAT_file.c_str());
+    }
+
+    if (solver == "nusc"){
+        std::string cutoff = argv[3];
+        std::string seed = argv[4];
+
+        // Convert to SAT format for NuSC solver
+        std::string SAT_file = "temp.sat"; 
+        graph.graphToSAT(SAT_file);
+    
+        // Run NuSC and capture output
+        std::string command = "./NuSC " + SAT_file + " " + cutoff + " " + seed;
+
+        std::string output = exec(command);
+        std::cout << output;
+        std::cout << std::endl;
+
+        // Delete temporary hypergraph file
+        std::remove(SAT_file.c_str());
+    }
+
+    if (solver == "lp"){
+        std::string lpFile = "temp.lp";
+        graph.writeHittingSetLP(lpFile);
+
+        std::string command = "scip -f " + lpFile;
+        std::string output = exec(command);
+        if (verbose){
+            std::cout << output;
+            std::cout << std::endl;
+        }
+        
+        auto result = parseReport(output, "scip");
+        cout << result.first << "," << result.second << endl;
+
+        std::remove(lpFile.c_str());
+    }
     //*/
     
     return 0;

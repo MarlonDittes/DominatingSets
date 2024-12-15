@@ -1,8 +1,10 @@
 #!/bin/bash
 
-solvers=("findminhs" "highs" "scip")
-testset="testset"
-time_limit=120
+#solvers=("findminhs" "highs" "scip")
+solvers=("lp")
+testset="exact-private"
+time_limit=300
+seed=1
 
 input_dir="./graphs/$testset"
 
@@ -14,7 +16,7 @@ for solver in "${solvers[@]}"; do
         "findminhs")
             echo "Name,Time Taken (seconds)" > "$output_csv"
             ;;
-        "highs" | "scip")
+        "highs" | "scip" | "lp" | "domsat" | "nusc")
             echo "Name,Solution Size,Time Taken (seconds)" > "$output_csv"
             ;;
         *)
@@ -35,11 +37,27 @@ for solver in "${solvers[@]}"; do
 
                 echo "$(basename "$graph_file"),$time_taken" >> "$output_csv"
                 ;;
-            "highs" | "scip")
+            "highs" | "scip" | "lp")
                 ./runlim --time-limit=$time_limit ./build/main "$graph_file" "$solver" > temp.txt
                 output=$(cat temp.txt)
 
                 echo "$(basename "$graph_file"),$output" >> "$output_csv"
+                rm -f temp.txt
+                ;;
+            "domsat")
+                ./build/main "$graph_file" "$solver" "$time_limit" > temp.txt
+
+                read solution_size time_taken < <(tac temp.txt | grep '^o' | head -n 1 | awk '{print $2, $3}')
+
+                echo "$(basename "$graph_file"),$solution_size,$time_taken" >> "$output_csv"
+                rm -f temp.txt
+                ;;
+            "nusc")
+                ./build/main "$graph_file" "$solver" "$time_limit" "$seed"> temp.txt
+
+                read solution_size time_taken < <(tac temp.txt | grep '^o' | head -n 1 | awk '{print $2, $3}')
+
+                echo "$(basename "$graph_file"),$solution_size,$time_taken" >> "$output_csv"
                 rm -f temp.txt
                 ;;
             *)

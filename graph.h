@@ -23,10 +23,12 @@ public:
     int getEdges(){return edges;};
 
     void graphToHypergraph(const std::string& outputFile) const;
-
-    std::pair<std::vector<std::vector<std::vector<int>>>, std::vector<std::vector<int>>> getConnectedComponents() const;
+    void graphToSAT(const std::string& outputFile) const;
 
     void writeHittingSetILP(const std::string &outputFile) const;
+    void writeHittingSetLP(const std::string &outputFile) const;
+
+    std::pair<std::vector<std::vector<std::vector<int>>>, std::vector<std::vector<int>>> getConnectedComponents() const;
 
 private:
     int vertices;

@@ -111,6 +111,125 @@ void Graph::graphToHypergraph(const std::string& outputFile) const{
     file.close();
 }
 
+void Graph::graphToSAT(const std::string& outputFile) const{
+    std::ofstream file(outputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open the output file!");
+    }
+
+    // Writing the hypergraph in custom text format described in README.md of https://github.com/Felerius/findminhs
+    file << vertices << " " << vertices << "\n"; // num_vertices num_hyperedges
+
+    for (int u = 0; u < vertices; ++u){
+        file << 1 << " ";
+    }
+    file << "\n";
+
+    for (int u = 0; u < vertices; ++u) {
+        // Insert closed neighborhoods of each vertex as hyperedge
+        file << adj[u].size() + 1 << " "; // size of the closed neighborhood
+        for (int v : adj[u]) {
+            file << v + 1 << " "; // print each node in the neighborhood
+        }
+        file << u + 1<< "\n"; // Include the vertex itself
+    }
+
+    file.close();
+}
+
+void Graph::writeHittingSetILP(const std::string &outputFile) const {
+    std::ofstream file(outputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + outputFile);
+    }
+
+    // Write the objective function
+    file << "Minimize\n obj: ";
+    for (int i = 0; i < vertices; ++i) {
+        file << "x" << i;
+        if (i < vertices - 1) {
+            file << " + ";
+        }
+    }
+    file << "\n\nSubject To\n";
+
+    // Write the constraints (one per closed neighborhood)
+    for (int u = 0; u < vertices; ++u) {
+        file << " c" << u + 1 << ": ";
+        std::set<int> neighborhood;
+        neighborhood.insert(u); // Include the vertex itself
+        for (int v : adj[u]) {
+            neighborhood.insert(v); // Include its neighbors
+        }
+        int count = 0;
+        for (int v : neighborhood) {
+            file << "x" << v;
+            if (++count < neighborhood.size()) {
+                file << " + ";
+            }
+        }
+        file << " >= 1\n";
+    }
+
+    // Write bounds and variable types
+    file << "\nBounds\n";
+    for (int i = 0; i < vertices; ++i) {
+        file << " 0 <= x" << i << " <= 1\n";
+    }
+
+    file << "\nBinary\n";
+    for (int i = 0; i < vertices; ++i) {
+        file << " x" << i << "\n";
+    }
+
+    file << "End\n";
+    file.close();
+}
+
+void Graph::writeHittingSetLP(const std::string &outputFile) const {
+    std::ofstream file(outputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + outputFile);
+    }
+
+    // Write the objective function
+    file << "Minimize\n obj: ";
+    for (int i = 0; i < vertices; ++i) {
+        file << "x" << i;
+        if (i < vertices - 1) {
+            file << " + ";
+        }
+    }
+    file << "\n\nSubject To\n";
+
+    // Write the constraints (one per closed neighborhood)
+    for (int u = 0; u < vertices; ++u) {
+        file << " c" << u + 1 << ": ";
+        std::set<int> neighborhood;
+        neighborhood.insert(u); // Include the vertex itself
+        for (int v : adj[u]) {
+            neighborhood.insert(v); // Include its neighbors
+        }
+        int count = 0;
+        for (int v : neighborhood) {
+            file << "x" << v;
+            if (++count < neighborhood.size()) {
+                file << " + ";
+            }
+        }
+        file << " >= 1\n";
+    }
+
+    // Write bounds and variable types
+    file << "\nBounds\n";
+    for (int i = 0; i < vertices; ++i) {
+        file << " 0 <= x" << i << " <= 1\n";
+    }
+
+    file << "End\n";
+    file.close();
+}
+
 // DFS helper function to traverse and collect nodes in a connected component
 void Graph::dfs(int node, std::vector<bool>& visited, std::vector<int>& component) const {
     visited[node] = true;
@@ -162,53 +281,4 @@ std::pair<std::vector<std::vector<std::vector<int>>>, std::vector<std::vector<in
     }
 
     return std::make_pair(connectedComponents, reverseMappings);
-}
-
-void Graph::writeHittingSetILP(const std::string &outputFile) const {
-    std::ofstream file(outputFile);
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file: " + outputFile);
-    }
-
-    // Write the objective function
-    file << "Minimize\n obj: ";
-    for (int i = 0; i < vertices; ++i) {
-        file << "x" << i;
-        if (i < vertices - 1) {
-            file << " + ";
-        }
-    }
-    file << "\n\nSubject To\n";
-
-    // Write the constraints (one per closed neighborhood)
-    for (int u = 0; u < vertices; ++u) {
-        file << " c" << u + 1 << ": ";
-        std::set<int> neighborhood;
-        neighborhood.insert(u); // Include the vertex itself
-        for (int v : adj[u]) {
-            neighborhood.insert(v); // Include its neighbors
-        }
-        int count = 0;
-        for (int v : neighborhood) {
-            file << "x" << v;
-            if (++count < neighborhood.size()) {
-                file << " + ";
-            }
-        }
-        file << " >= 1\n";
-    }
-
-    // Write bounds and variable types
-    file << "\nBounds\n";
-    for (int i = 0; i < vertices; ++i) {
-        file << " 0 <= x" << i << " <= 1\n";
-    }
-
-    file << "\nBinary\n";
-    for (int i = 0; i < vertices; ++i) {
-        file << " x" << i << "\n";
-    }
-
-    file << "End\n";
-    file.close();
 }
