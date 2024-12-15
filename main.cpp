@@ -144,9 +144,9 @@ void generateCSVForGraphs(const std::string& folderPath, const std::string& outp
             
             int numVertices = graph.getVertices();
             int numEdges = graph.getEdges();
-            double density =graph.computeDensity();
+            double density = graph.computeDensity();
             int maxDegree = graph.getMaxDegree();
-            int lowerBound = std::ceil(graph.computeEfficiencyLowerBound());
+            int lowerBound = graph.computeEfficiencyLowerBound();
             auto greedySol = graph.greedyDominatingSet();
             int upperBound = greedySol.size();
 
