@@ -230,6 +230,65 @@ void Graph::writeHittingSetLP(const std::string &outputFile) const {
     file.close();
 }
 
+void Graph::writeHittingSetILP_check(const std::string &outputFile, int k) const {
+    std::ofstream file(outputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + outputFile);
+    }
+
+    // Write the objective function
+    file << "Minimize\n obj: ";
+    for (int i = 0; i < vertices; ++i) {
+        file << "x" << i;
+        if (i < vertices - 1) {
+            file << " + ";
+        }
+    }
+    file << "\n\nSubject To\n";
+
+    // Write the constraints (one per closed neighborhood)
+    for (int u = 0; u < vertices; ++u) {
+        file << " c" << u + 1 << ": ";
+        std::set<int> neighborhood;
+        neighborhood.insert(u); // Include the vertex itself
+        for (int v : adj[u]) {
+            neighborhood.insert(v); // Include its neighbors
+        }
+        int count = 0;
+        for (int v : neighborhood) {
+            file << "x" << v;
+            if (++count < neighborhood.size()) {
+                file << " + ";
+            }
+        }
+        file << " >= 1\n";
+    }
+
+    // Add the constraint to limit the number of selected elements to k
+    file << " c_total: ";
+    for (int i = 0; i < vertices; ++i) {
+        file << "x" << i;
+        if (i < vertices - 1) {
+            file << " + ";
+        }
+    }
+    file << " <= " << k << "\n";
+
+    // Write bounds and variable types
+    file << "\nBounds\n";
+    for (int i = 0; i < vertices; ++i) {
+        file << " 0 <= x" << i << " <= 1\n";
+    }
+
+    file << "\nBinary\n";
+    for (int i = 0; i < vertices; ++i) {
+        file << " x" << i << "\n";
+    }
+
+    file << "End\n";
+    file.close();
+}
+
 // DFS helper function to traverse and collect nodes in a connected component
 void Graph::dfs(int node, std::vector<bool>& visited, std::vector<int>& component) const {
     visited[node] = true;

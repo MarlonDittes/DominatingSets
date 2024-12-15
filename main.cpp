@@ -348,6 +348,29 @@ int main(int argc, char* argv[]) {
 
         std::remove(lpFile.c_str());
     }
+
+    if (solver == "ilp_check"){
+        int k = std::stoi(argv[3]);
+
+        std::string lpFile = "temp.lp";
+        graph.writeHittingSetILP_check(lpFile, k);
+
+        std::string command = "scip -f " + lpFile;
+        std::string output = exec(command);
+        if (verbose){
+            std::cout << output;
+            std::cout << std::endl;
+        }
+        
+        std::regex infeasibleRegex(R"(Primal Bound\s*:\s*infeasible|problem infeasible)");
+        if (std::regex_search(output, infeasibleRegex)){
+            cout << "infeasible" << endl;
+        } else{
+            cout << "feasible" << endl;
+        }
+
+        std::remove(lpFile.c_str());
+    }
     //*/
     
     return 0;

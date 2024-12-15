@@ -27,6 +27,7 @@ public:
 
     void writeHittingSetILP(const std::string &outputFile) const;
     void writeHittingSetLP(const std::string &outputFile) const;
+    void writeHittingSetILP_check(const std::string &outputFile, int k) const;
 
     std::pair<std::vector<std::vector<std::vector<int>>>, std::vector<std::vector<int>>> getConnectedComponents() const;
 
