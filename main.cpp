@@ -128,7 +128,7 @@ void generateCSVForGraphs(const std::string& folderPath, const std::string& outp
     }
 
     // Write CSV header
-    csvFile << "Name,Vertices,Edges,Density,Max Degree,Lower Bound,Upper Bound" << std::endl;
+    csvFile << "Name,Vertices,Edges,Density,Max Degree,Lower Bound,Upper Bound,Triangles,Average Degree,Std Dev Degree" << std::endl;
 
     // Iterate through all files in the directory
     while ((entry = readdir(dir)) != nullptr) {
@@ -149,6 +149,9 @@ void generateCSVForGraphs(const std::string& folderPath, const std::string& outp
             double lowerBound = graph.computeEfficiencyLowerBound();
             auto greedySol = graph.greedyDominatingSet();
             int upperBound = greedySol.size();
+            int triangles = graph.countTriangles();
+            auto [avgDegree, stdDev] = graph.computeDegreeStats();
+            
 
             // Write the results to the CSV
             csvFile << filename << ","
@@ -157,8 +160,10 @@ void generateCSVForGraphs(const std::string& folderPath, const std::string& outp
                     << density << ","
                     << maxDegree << ","
                     << lowerBound << ","
-                    << upperBound << std::endl;
-            
+                    << upperBound << ","
+                    << triangles << ","
+                    << avgDegree << ","
+                    << stdDev << std::endl;
         }
     }
 
@@ -212,7 +217,7 @@ using std::cout;
 using std::endl;
 
 int main(int argc, char* argv[]) {
-    //std::string name = "testset";
+    //std::string name = "exact-private";
     //generateCSVForGraphs("../graphs/" + name, "../graphs/" + name + "/properties.csv");
 
     ///*

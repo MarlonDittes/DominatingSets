@@ -9,6 +9,8 @@
 #include <algorithm>  // For std::max
 #include <unordered_map>
 #include <set>
+#include <cmath>
+#include <numeric>
 
 class Graph {
 public:
@@ -21,6 +23,9 @@ public:
 
     int getVertices(){return vertices;};
     int getEdges(){return edges;};
+    int countTriangles() const;
+    std::vector<int> getVertexDegrees() const;
+    std::pair<double, double> computeDegreeStats() const;
 
     void graphToHypergraph(const std::string& outputFile) const;
     void graphToSAT(const std::string& outputFile) const;

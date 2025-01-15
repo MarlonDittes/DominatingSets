@@ -90,6 +90,50 @@ int Graph::getMaxDegree() const {
     return max_degree;
 }
 
+int Graph::countTriangles() const{
+    int triangleCount = 0;
+
+    // Iterate over all vertices
+    for (int u = 0; u < vertices; ++u) {
+        // Check neighbors of u
+        for (int v : adj[u]) {
+            if (v > u) { // Ensure u < v to avoid double-counting
+                for (int w : adj[v]) {
+                    if (w > v && std::find(adj[u].begin(), adj[u].end(), w) != adj[u].end()) {
+                        // Triangle found: u-v-w
+                        ++triangleCount;
+                    }
+                }
+            }
+        }
+    }
+
+    return triangleCount;
+}
+
+std::vector<int> Graph::getVertexDegrees() const{
+    std::vector<int> degrees(vertices);
+    for (int i = 0; i < vertices; ++i) {
+        degrees[i] = adj[i].size(); // Degree is the size of adjacency list
+    }
+    return degrees;
+}
+
+std::pair<double, double> Graph::computeDegreeStats() const{
+    auto degrees = getVertexDegrees();
+    double sum = std::accumulate(degrees.begin(), degrees.end(), 0);
+    double avgDegree = sum / vertices;
+
+    double variance = 0.0;
+    for (int degree : degrees) {
+        variance += (degree - avgDegree) * (degree - avgDegree);
+    }
+    variance /= vertices;
+    double stdDev = std::sqrt(variance);
+
+    return {avgDegree, stdDev};
+}
+
 void Graph::graphToHypergraph(const std::string& outputFile) const{
     std::ofstream file(outputFile);
     if (!file.is_open()) {
