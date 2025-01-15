@@ -3,9 +3,89 @@
 Graph::Graph(int vertices) : vertices(vertices), adj(vertices) {}
 
 void Graph::addEdge(int u, int v) {
-    adj[u-1].push_back(v-1); // Assuming 1-based index in the .gr file, converting to 0-based
-    adj[v-1].push_back(u-1);  // Undirected graph, so add edge in both directions
+    adj[u-1].edges.push_back(v-1); // Assuming 1-based index in the .gr file, converting to 0-based
+    adj[v-1].edges.push_back(u-1);  // Undirected graph, so add edge in both directions
     edges += 1;
+}
+
+void Graph::makeNodeInvisible(int u){
+    assert(adj[u].active);
+
+    Node* node = &adj[u];
+
+    for (int i = 0; i < node->edges.size(); i++){
+        int v = node->edges[i];
+        Node* neighbor = &adj[v];
+
+        //make node invisible in all adjacency lists of neighbours
+        assert(neighbor->edges.size() > neighbor->offset);
+        for (int j = neighbor->offset; j < neighbor->edges.size(); j++) {
+            if (neighbor->edges[j] != u) {
+                continue;
+            }
+            //add node to invisible nodes and add visible counter
+            std::swap(neighbor->edges[j], neighbor->edges[neighbor->offset]);
+            neighbor->offset++;
+        }
+    }
+
+    node->active = false;
+}
+
+void Graph::makeNodeVisible(int u) {
+    assert(!adj[u].active);
+
+    Node* node = &adj[u];
+    node->offset = 0;
+    node->active = true;
+
+    for (int i = 0; i < node->edges.size(); i++) {
+        Node* neighbor = &adj[node->edges[i]];
+
+        // Handle inactive neighbors
+        if (!neighbor->active){
+            std::swap(node->edges[i], node->edges[node->offset]);
+            node->offset++;
+        }
+
+        //make node visible in all adjacency lists of neighbours
+        assert(neighbor->offset > 0);
+        for (int j = 0; j < neighbor->offset; j++) {
+            if (neighbor->edges[j] != u) {
+                continue;
+            }
+            //add node to visible nodes and reduce visible counter
+            std::swap(neighbor->edges[j], neighbor->edges[neighbor->offset - 1]);
+            neighbor->offset--;
+        }
+    }
+}
+
+void Graph::printGraph() const {
+    std::cout << "Total Vertices: " << vertices << std::endl;
+    std::cout << "Total Edges: " << edges << std::endl;
+
+    for (int i = 0; i < vertices; ++i) {
+        // Mark nodes that are globally removed
+        if (!adj[i].active) {
+            std::cout << "// Node " << i+1 << " (Offset: " << adj[i].offset << "): ";
+        } else {
+            std::cout << "Node " << i+1 << " (Offset: " << adj[i].offset << "): ";
+        }
+
+        // Print the neighbors with a visual offset marker '|'
+        for (int j = 0; j < adj[i].edges.size(); ++j) {
+            if (j == adj[i].offset) std::cout << "| ";  // Mark the offset position
+            std::cout << adj[i].edges[j]+1 << " ";
+        }
+
+        // If the offset equals the size of the neighborhood, place the '|'
+        if (adj[i].offset == adj[i].edges.size()) {
+            std::cout << "|";
+        }
+
+        std::cout << std::endl;
+    }
 }
 
 std::vector<int> Graph::greedyDominatingSet() {
@@ -26,7 +106,7 @@ std::vector<int> Graph::greedyDominatingSet() {
 
         for (int u : uncovered) {
             int coverage = 0;
-            for (int v : adj[u]) {
+            for (int v : adj[u].edges) {
                 if (!covered[v]) ++coverage;
             }
             if (coverage > maxCoverage) {
@@ -41,7 +121,7 @@ std::vector<int> Graph::greedyDominatingSet() {
         uncovered.erase(bestVertex);
 
         // Mark all neighbors of bestVertex as covered
-        for (int neighbor : adj[bestVertex]) {
+        for (int neighbor : adj[bestVertex].edges) {
             if (!covered[neighbor]) {
                 covered[neighbor] = true;
                 uncovered.erase(neighbor);
@@ -57,9 +137,9 @@ double Graph::computeEfficiencyLowerBound(){
 
     // Iterate over each edge in the graph
     for (int u = 0; u < vertices; ++u) {
-        int max_deg = adj[u].size() + 1;
-        for (int v : adj[u]) {
-            int current_deg = adj[v].size() + 1;  
+        int max_deg = adj[u].edges.size() + 1;
+        for (int v : adj[u].edges) {
+            int current_deg = adj[v].edges.size() + 1;  
             if (current_deg > max_deg){
                 max_deg = current_deg;
             }   
@@ -84,7 +164,7 @@ int Graph::getMaxDegree() const {
 
     // Iterate over all vertices and find the maximum degree
     for (int u = 0; u < adj.size(); ++u) {
-        max_degree = std::max(max_degree, static_cast<int>(adj[u].size()));
+        max_degree = std::max(max_degree, static_cast<int>(adj[u].edges.size()));
     }
 
     return max_degree;
@@ -96,10 +176,10 @@ int Graph::countTriangles() const{
     // Iterate over all vertices
     for (int u = 0; u < vertices; ++u) {
         // Check neighbors of u
-        for (int v : adj[u]) {
+        for (int v : adj[u].edges) {
             if (v > u) { // Ensure u < v to avoid double-counting
-                for (int w : adj[v]) {
-                    if (w > v && std::find(adj[u].begin(), adj[u].end(), w) != adj[u].end()) {
+                for (int w : adj[v].edges) {
+                    if (w > v && std::find(adj[u].edges.begin(), adj[u].edges.end(), w) != adj[u].edges.end()) {
                         // Triangle found: u-v-w
                         ++triangleCount;
                     }
@@ -114,7 +194,7 @@ int Graph::countTriangles() const{
 std::vector<int> Graph::getVertexDegrees() const{
     std::vector<int> degrees(vertices);
     for (int i = 0; i < vertices; ++i) {
-        degrees[i] = adj[i].size(); // Degree is the size of adjacency list
+        degrees[i] = adj[i].edges.size(); // Degree is the size of adjacency list
     }
     return degrees;
 }
@@ -145,8 +225,8 @@ void Graph::graphToHypergraph(const std::string& outputFile) const{
 
     for (int u = 0; u < vertices; ++u) {
         // Insert closed neighborhoods of each vertex as hyperedge
-        file << adj[u].size() + 1 << " "; // size of the closed neighborhood
-        for (int v : adj[u]) {
+        file << adj[u].edges.size() + 1 << " "; // size of the closed neighborhood
+        for (int v : adj[u].edges) {
             file << v << " "; // print each node in the neighborhood
         }
         file << u << "\n"; // Include the vertex itself
@@ -171,8 +251,8 @@ void Graph::graphToSAT(const std::string& outputFile) const{
 
     for (int u = 0; u < vertices; ++u) {
         // Insert closed neighborhoods of each vertex as hyperedge
-        file << adj[u].size() + 1 << " "; // size of the closed neighborhood
-        for (int v : adj[u]) {
+        file << adj[u].edges.size() + 1 << " "; // size of the closed neighborhood
+        for (int v : adj[u].edges) {
             file << v + 1 << " "; // print each node in the neighborhood
         }
         file << u + 1<< "\n"; // Include the vertex itself
@@ -202,7 +282,7 @@ void Graph::writeHittingSetILP(const std::string &outputFile) const {
         file << " c" << u + 1 << ": ";
         std::set<int> neighborhood;
         neighborhood.insert(u); // Include the vertex itself
-        for (int v : adj[u]) {
+        for (int v : adj[u].edges) {
             neighborhood.insert(v); // Include its neighbors
         }
         int count = 0;
@@ -251,7 +331,7 @@ void Graph::writeHittingSetLP(const std::string &outputFile) const {
         file << " c" << u + 1 << ": ";
         std::set<int> neighborhood;
         neighborhood.insert(u); // Include the vertex itself
-        for (int v : adj[u]) {
+        for (int v : adj[u].edges) {
             neighborhood.insert(v); // Include its neighbors
         }
         int count = 0;
@@ -295,7 +375,7 @@ void Graph::writeHittingSetILP_check(const std::string &outputFile, int k) const
         file << " c" << u + 1 << ": ";
         std::set<int> neighborhood;
         neighborhood.insert(u); // Include the vertex itself
-        for (int v : adj[u]) {
+        for (int v : adj[u].edges) {
             neighborhood.insert(v); // Include its neighbors
         }
         int count = 0;
@@ -338,7 +418,7 @@ void Graph::dfs(int node, std::vector<bool>& visited, std::vector<int>& componen
     visited[node] = true;
     component.push_back(node);
 
-    for (int neighbor : adj[node]) {
+    for (int neighbor : adj[node].edges) {
         if (!visited[neighbor]) {
             dfs(neighbor, visited, component);
         }
@@ -370,7 +450,7 @@ std::pair<std::vector<std::vector<std::vector<int>>>, std::vector<std::vector<in
             // Populate adjacency list for the subgraph
             for (int node : componentNodes) {
                 std::vector<int> neighborsInSubgraph;
-                for (int neighbor : adj[node]) {
+                for (int neighbor : adj[node].edges) {
                     if (oldToNew.find(neighbor) != oldToNew.end()) {
                         neighborsInSubgraph.push_back(oldToNew[neighbor]);
                     }

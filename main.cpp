@@ -234,8 +234,27 @@ int main(int argc, char* argv[]) {
     
     // Read graph from file
     auto graph = readGraphFromFile(graphFile);
-
     bool verbose = false;
+
+    graph.printGraph();
+
+    graph.makeNodeInvisible(0);
+    cout << endl;
+    graph.printGraph();
+
+    graph.makeNodeInvisible(1);
+    cout << endl;
+    graph.printGraph();
+
+    graph.makeNodeInvisible(3);
+    cout << endl;
+    graph.printGraph();
+
+    graph.makeNodeVisible(1);
+    cout << endl;
+    graph.printGraph();
+
+
 
     if (solver == "findminhs"){
         std::string solutionFile = argv[3];
