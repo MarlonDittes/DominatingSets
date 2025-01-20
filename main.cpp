@@ -236,25 +236,34 @@ int main(int argc, char* argv[]) {
     auto graph = readGraphFromFile(graphFile);
     bool verbose = false;
 
-    graph.printGraph();
+    std::vector<int> dominatingSet(0);
+    int isolatedVertexUsage = 0;
+    int singleEdgeVertexUsage = 0;
+    int dominatingVertexUsage = 0;
+    bool changed = true;
 
-    graph.makeNodeInvisible(0);
-    cout << endl;
-    graph.printGraph();
+    while (changed){
+        changed = false;
+        int currentUsage;
+        
+        currentUsage = graph.reductionIsolatedVertex(dominatingSet);
+        if (currentUsage != 0) changed = true;
+        isolatedVertexUsage+= currentUsage;
+        
+        currentUsage = graph.reductionSingleEdgeVertex(dominatingSet);
+        if (currentUsage != 0) changed = true;
+        singleEdgeVertexUsage+= currentUsage;
 
-    graph.makeNodeInvisible(1);
-    cout << endl;
-    graph.printGraph();
+        currentUsage = graph.reductionDominatingVertex(dominatingSet);
+        if (currentUsage != 0) changed = true;
+        dominatingVertexUsage+= currentUsage;
+    }
 
-    graph.makeNodeInvisible(3);
-    cout << endl;
-    graph.printGraph();
-
-    graph.makeNodeVisible(1);
-    cout << endl;
-    graph.printGraph();
-
-
+    //cout << endl;
+    //cout << "Isolated: " << isolatedVertexUsage << endl;
+    //cout << "Single Edge: " << singleEdgeVertexUsage << endl;
+    //cout << "Dominating: " << dominatingVertexUsage << endl;
+    //cout << "DominatingSet now has: " << dominatingSet.size() << endl;
 
     if (solver == "findminhs"){
         std::string solutionFile = argv[3];
@@ -272,7 +281,6 @@ int main(int argc, char* argv[]) {
             std::cout << output;
             std::cout << std::endl;
         }
-  
 
         // Delete temporary hypergraph file
         std::remove(hypergraphFile.c_str());

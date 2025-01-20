@@ -102,7 +102,19 @@ int Graph::reductionIsolatedVertex(std::vector<int>& dominatingSet) {
 
 int Graph::reductionDominatingVertex(std::vector<int>& dominatingSet) {
     int occurence = 0;
+
+    // Create a vector of pairs (degree, vertex_index)
+    std::vector<std::pair<int, int>> degreeOrder;
     for (int u = 0; u < vertices; u++) {
+        if (adj[u].active) {
+            degreeOrder.emplace_back(adj[u].edges.size(), u);
+        }
+    }
+
+    std::sort(degreeOrder.rbegin(), degreeOrder.rend());
+
+    for (const auto& [degree, u] : degreeOrder) {
+    //for (int u = 0; u < vertices; u++) {
         if (!adj[u].active) continue;
 
         for (int i = adj[u].offset; i < adj[u].edges.size(); i++) {
@@ -340,28 +352,34 @@ void Graph::writeHittingSetILP(const std::string &outputFile) const {
 
     // Write the objective function
     file << "Minimize\n obj: ";
+    bool first = true;
     for (int i = 0; i < vertices; ++i) {
-        file << "x" << i;
-        if (i < vertices - 1) {
+        if (!adj[i].active) continue; // Skip inactive vertices
+        if (!first) {
             file << " + ";
         }
+        file << "x" << i;
+        first = false;
     }
     file << "\n\nSubject To\n";
 
     // Write the constraints (one per closed neighborhood)
     for (int u = 0; u < vertices; ++u) {
+        if (!adj[u].active) continue; // Skip inactive vertices
         file << " c" << u + 1 << ": ";
         std::set<int> neighborhood;
         neighborhood.insert(u); // Include the vertex itself
-        for (int v : adj[u].edges) {
-            neighborhood.insert(v); // Include its neighbors
+        for (int j = adj[u].offset; j < adj[u].edges.size(); j++){
+            int v = adj[u].edges[j];
+            neighborhood.insert(v);
         }
         int count = 0;
         for (int v : neighborhood) {
-            file << "x" << v;
-            if (++count < neighborhood.size()) {
+            if (count > 0) {
                 file << " + ";
             }
+            file << "x" << v;
+            count++;
         }
         file << " >= 1\n";
     }
@@ -369,11 +387,13 @@ void Graph::writeHittingSetILP(const std::string &outputFile) const {
     // Write bounds and variable types
     file << "\nBounds\n";
     for (int i = 0; i < vertices; ++i) {
+        if (!adj[i].active) continue; // Skip inactive vertices
         file << " 0 <= x" << i << " <= 1\n";
     }
 
     file << "\nBinary\n";
     for (int i = 0; i < vertices; ++i) {
+        if (!adj[i].active) continue; // Skip inactive vertices
         file << " x" << i << "\n";
     }
 
@@ -389,28 +409,34 @@ void Graph::writeHittingSetLP(const std::string &outputFile) const {
 
     // Write the objective function
     file << "Minimize\n obj: ";
+    bool first = true;
     for (int i = 0; i < vertices; ++i) {
-        file << "x" << i;
-        if (i < vertices - 1) {
+        if (!adj[i].active) continue; // Skip inactive vertices
+        if (!first) {
             file << " + ";
         }
+        file << "x" << i;
+        first = false;
     }
     file << "\n\nSubject To\n";
 
     // Write the constraints (one per closed neighborhood)
     for (int u = 0; u < vertices; ++u) {
+        if (!adj[u].active) continue; // Skip inactive vertices
         file << " c" << u + 1 << ": ";
         std::set<int> neighborhood;
         neighborhood.insert(u); // Include the vertex itself
-        for (int v : adj[u].edges) {
-            neighborhood.insert(v); // Include its neighbors
+        for (int j = adj[u].offset; j < adj[u].edges.size(); j++){
+            int v = adj[u].edges[j];
+            neighborhood.insert(v);
         }
         int count = 0;
         for (int v : neighborhood) {
-            file << "x" << v;
-            if (++count < neighborhood.size()) {
+            if (count > 0) {
                 file << " + ";
             }
+            file << "x" << v;
+            count++;
         }
         file << " >= 1\n";
     }
@@ -418,6 +444,7 @@ void Graph::writeHittingSetLP(const std::string &outputFile) const {
     // Write bounds and variable types
     file << "\nBounds\n";
     for (int i = 0; i < vertices; ++i) {
+        if (!adj[i].active) continue; // Skip inactive vertices
         file << " 0 <= x" << i << " <= 1\n";
     }
 
