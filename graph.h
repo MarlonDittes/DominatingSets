@@ -33,6 +33,10 @@ public:
     void makeNodeVisible(int u);
     void printGraph() const;
 
+    int reductionIsolatedVertex(std::vector<int>& dominatingSet);
+    int reductionDominatingVertex(std::vector<int>& dominatingSet);
+    int reductionSingleEdgeVertex(std::vector<int>& dominatingSet);
+
     std::vector<int> greedyDominatingSet();
     double computeEfficiencyLowerBound();
     double computeDensity() const;

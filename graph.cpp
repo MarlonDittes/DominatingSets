@@ -88,6 +88,77 @@ void Graph::printGraph() const {
     }
 }
 
+int Graph::reductionIsolatedVertex(std::vector<int>& dominatingSet) {
+    int occurence = 0;
+    for (int i = 0; i < vertices; i++) {
+        if (adj[i].active && (adj[i].edges.size() == adj[i].offset)) {
+            dominatingSet.push_back(i);
+            makeNodeInvisible(i);
+            occurence++;
+        }
+    }
+    return occurence;
+}
+
+int Graph::reductionDominatingVertex(std::vector<int>& dominatingSet) {
+    int occurence = 0;
+    for (int u = 0; u < vertices; u++) {
+        if (!adj[u].active) continue;
+
+        for (int i = adj[u].offset; i < adj[u].edges.size(); i++) {
+            int v = adj[u].edges[i];
+            if (v < u) continue;
+
+            // Check if u dominates v's neighborhood
+            bool dominates = true;
+            for (int j = adj[v].offset; j < adj[v].edges.size(); j++) {
+                int neighbor = adj[v].edges[j];
+                if (neighbor != u && std::find(adj[u].edges.begin(), adj[u].edges.end(), neighbor) == adj[u].edges.end()) {
+                    dominates = false;
+                    break;
+                }
+            }
+
+            if (dominates) {
+                // Add u to the dominating set
+                dominatingSet.push_back(u);
+                //std::cout << u+1 << " dominates " << v+1 << std::endl;
+                // Remove u, v, and all of u's other neighbors
+                makeNodeInvisible(u);
+                for (int j = adj[u].offset; j < adj[u].edges.size(); j++) {
+                    makeNodeInvisible(adj[u].edges[j]);
+                }
+                occurence++;
+
+                // Break to prevent processing invalidated nodes
+                break;
+            }
+        }
+    }
+    return occurence;
+}
+
+int Graph::reductionSingleEdgeVertex(std::vector<int>& dominatingSet) {
+    int occurence = 0;
+    for (int i = 0; i < vertices; i++) {
+        if (!adj[i].active || adj[i].edges.size() != adj[i].offset + 1) continue;
+
+        int neighbor = adj[i].edges[adj[i].offset];
+        if (adj[neighbor].active) {
+            // Add the neighbor to the dominating set
+            dominatingSet.push_back(neighbor);
+
+            // Remove the neighbor and all its neighbors
+            makeNodeInvisible(neighbor);
+            for (int j = adj[neighbor].offset; j < adj[neighbor].edges.size(); j++) {
+                makeNodeInvisible(adj[neighbor].edges[j]);
+            }
+            occurence++;
+        }
+    }
+    return occurence;
+}
+
 std::vector<int> Graph::greedyDominatingSet() {
     std::vector<int> dominatingSet;
     std::vector<bool> covered(vertices, false);  // To check if a vertex is covered
