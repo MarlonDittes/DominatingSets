@@ -101,6 +101,8 @@ int Graph::reductionIsolatedVertex(std::vector<int>& dominatingSet) {
 }
 
 int Graph::reductionDominatingVertex(std::vector<int>& dominatingSet) {
+    //TODO: fix order of looking at
+    //TODO: DO WE EVEN NEED ORDERING?
     int occurence = 0;
 
     // Create a vector of pairs (degree, vertex_index)
@@ -119,11 +121,12 @@ int Graph::reductionDominatingVertex(std::vector<int>& dominatingSet) {
 
         for (int i = adj[u].offset; i < adj[u].edges.size(); i++) {
             int v = adj[u].edges[i];
-            if (v < u) continue;
+            // u can only dominate v if it has more active edges left
+            if (adj[v].edges.size() > adj[u].edges.size()) continue;
 
             // Check if u dominates v's neighborhood
             bool dominates = true;
-            for (int j = adj[v].offset; j < adj[v].edges.size(); j++) {
+            for (int j = 0; j < adj[v].edges.size(); j++) {
                 int neighbor = adj[v].edges[j];
                 if (neighbor != u && std::find(adj[u].edges.begin(), adj[u].edges.end(), neighbor) == adj[u].edges.end()) {
                     dominates = false;
@@ -132,14 +135,9 @@ int Graph::reductionDominatingVertex(std::vector<int>& dominatingSet) {
             }
 
             if (dominates) {
-                // Add u to the dominating set
-                dominatingSet.push_back(u);
-                //std::cout << u+1 << " dominates " << v+1 << std::endl;
-                // Remove u, v, and all of u's other neighbors
-                makeNodeInvisible(u);
-                for (int j = adj[u].offset; j < adj[u].edges.size(); j++) {
-                    makeNodeInvisible(adj[u].edges[j]);
-                }
+                //std::cout << u << " dominates " << v << std::endl;
+                // Remove dominated node v
+                makeNodeInvisible(v);
                 occurence++;
 
                 // Break to prevent processing invalidated nodes
@@ -159,11 +157,12 @@ int Graph::reductionSingleEdgeVertex(std::vector<int>& dominatingSet) {
         if (adj[neighbor].active) {
             // Add the neighbor to the dominating set
             dominatingSet.push_back(neighbor);
-
-            // Remove the neighbor and all its neighbors
+            //std::cout << "Choose " << neighbor << " over " << i << std::endl;
+            // Remove the neighbor and initial node and mark all neighbors as covered
             makeNodeInvisible(neighbor);
+            makeNodeInvisible(i);
             for (int j = adj[neighbor].offset; j < adj[neighbor].edges.size(); j++) {
-                makeNodeInvisible(adj[neighbor].edges[j]);
+                adj[adj[neighbor].edges[j]].covered = true;
             }
             occurence++;
         }
@@ -365,7 +364,7 @@ void Graph::writeHittingSetILP(const std::string &outputFile) const {
 
     // Write the constraints (one per closed neighborhood)
     for (int u = 0; u < vertices; ++u) {
-        if (!adj[u].active) continue; // Skip inactive vertices
+        if (!adj[u].active) continue; // Skip inactive vertices or vertices that are already covered
         file << " c" << u + 1 << ": ";
         std::set<int> neighborhood;
         neighborhood.insert(u); // Include the vertex itself
@@ -422,7 +421,7 @@ void Graph::writeHittingSetLP(const std::string &outputFile) const {
 
     // Write the constraints (one per closed neighborhood)
     for (int u = 0; u < vertices; ++u) {
-        if (!adj[u].active) continue; // Skip inactive vertices
+        if (!adj[u].active || adj[u].covered) continue; // Skip inactive vertices or vertices that are already covered
         file << " c" << u + 1 << ": ";
         std::set<int> neighborhood;
         neighborhood.insert(u); // Include the vertex itself

@@ -172,6 +172,70 @@ void generateCSVForGraphs(const std::string& folderPath, const std::string& outp
     std::cout << "CSV file generated: " << outputCSV << std::endl;
 }
 
+void generateReductionCSV(const std::string& folderPath, const std::string& outputCSV) {
+    DIR* dir = opendir(folderPath.c_str());
+    if (!dir) {
+        std::cerr << "Could not open directory: " << folderPath << std::endl;
+        return;
+    }
+
+    struct dirent* entry;
+    std::ofstream csvFile(outputCSV);
+    if (!csvFile.is_open()) {
+        std::cerr << "Could not open output CSV file: " << outputCSV << std::endl;
+        return;
+    }
+
+    // Write CSV header
+    csvFile << "Name,Isolated,Single Edge,Dominating,Set Size" << std::endl;
+
+    // Iterate through all files in the directory
+    while ((entry = readdir(dir)) != nullptr) {
+        std::string filename = entry->d_name;
+
+        // Only process .gr files
+        if (filename.size() >= 3 && filename.substr(filename.size() - 3) == ".gr") {
+            std::string filepath = folderPath + "/" + filename;
+            auto graph = readGraphFromFile(filepath);
+            
+            std::vector<int> dominatingSet(0);
+            int isolatedVertexUsage = 0;
+            int singleEdgeVertexUsage = 0;
+            int dominatingVertexUsage = 0;
+            bool changed = true;
+
+            while (changed){
+                changed = false;
+                int currentUsage;
+                
+                currentUsage = graph.reductionIsolatedVertex(dominatingSet);
+                if (currentUsage != 0) changed = true;
+                isolatedVertexUsage+= currentUsage;
+                
+                currentUsage = graph.reductionSingleEdgeVertex(dominatingSet);
+                if (currentUsage != 0) changed = true;
+                singleEdgeVertexUsage+= currentUsage;
+
+                currentUsage = graph.reductionDominatingVertex(dominatingSet);
+                if (currentUsage != 0) changed = true;
+                dominatingVertexUsage+= currentUsage;
+            }
+            
+
+            // Write the results to the CSV
+            csvFile << filename << ","
+                    << isolatedVertexUsage << ","
+                    << singleEdgeVertexUsage << ","
+                    << dominatingVertexUsage << ","
+                    << dominatingSet.size() << std::endl;
+        }
+    }
+
+    closedir(dir);
+    csvFile.close();
+    std::cout << "CSV file generated: " << outputCSV << std::endl;
+}
+
 std::pair<double, double> parseReport(const std::string& report, const std::string& solver){
     std::pair<double, double> result = {-1, -1}; // Default values if parsing fails
 
@@ -217,8 +281,9 @@ using std::cout;
 using std::endl;
 
 int main(int argc, char* argv[]) {
-    //std::string name = "exact-private";
+    //std::string name = "testset";
     //generateCSVForGraphs("../graphs/" + name, "../graphs/" + name + "/properties.csv");
+    //generateReductionCSV("../graphs/" + name, "../graphs/" + name + "/reductions.csv");
 
     ///*
     // Ensure the correct number of arguments are provided
@@ -235,35 +300,36 @@ int main(int argc, char* argv[]) {
     // Read graph from file
     auto graph = readGraphFromFile(graphFile);
     bool verbose = false;
+    bool reductions = true;
 
-    std::vector<int> dominatingSet(0);
-    int isolatedVertexUsage = 0;
-    int singleEdgeVertexUsage = 0;
-    int dominatingVertexUsage = 0;
-    bool changed = true;
+    if (reductions){
+        std::vector<int> dominatingSet(0);
+        int isolatedVertexUsage = 0;
+        int singleEdgeVertexUsage = 0;
+        int dominatingVertexUsage = 0;
+        bool changed = true;
 
-    while (changed){
-        changed = false;
-        int currentUsage;
-        
-        currentUsage = graph.reductionIsolatedVertex(dominatingSet);
-        if (currentUsage != 0) changed = true;
-        isolatedVertexUsage+= currentUsage;
-        
-        currentUsage = graph.reductionSingleEdgeVertex(dominatingSet);
-        if (currentUsage != 0) changed = true;
-        singleEdgeVertexUsage+= currentUsage;
+        while (changed){
+            changed = false;
+            int currentUsage;
+            
+            currentUsage = graph.reductionIsolatedVertex(dominatingSet);
+            if (currentUsage != 0) changed = true;
+            isolatedVertexUsage+= currentUsage;
+            
+            currentUsage = graph.reductionSingleEdgeVertex(dominatingSet);
+            if (currentUsage != 0) changed = true;
+            singleEdgeVertexUsage+= currentUsage;
 
-        currentUsage = graph.reductionDominatingVertex(dominatingSet);
-        if (currentUsage != 0) changed = true;
-        dominatingVertexUsage+= currentUsage;
+            currentUsage = graph.reductionDominatingVertex(dominatingSet);
+            if (currentUsage != 0) changed = true;
+            dominatingVertexUsage+= currentUsage;
+        }
+
+        //for (auto node : dominatingSet){
+        //   cout << node << endl;
+        //}
     }
-
-    //cout << endl;
-    //cout << "Isolated: " << isolatedVertexUsage << endl;
-    //cout << "Single Edge: " << singleEdgeVertexUsage << endl;
-    //cout << "Dominating: " << dominatingVertexUsage << endl;
-    //cout << "DominatingSet now has: " << dominatingSet.size() << endl;
 
     if (solver == "findminhs"){
         std::string solutionFile = argv[3];

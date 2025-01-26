@@ -16,7 +16,8 @@
 struct Node {
     std::vector<int> edges;
     int offset = 0; //offset to visible nodes in neighborhood
-    int active = true;
+    bool active = true;
+    bool covered = false;
 };
 
 class Graph {
