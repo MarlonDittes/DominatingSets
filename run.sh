@@ -1,15 +1,15 @@
 #!/bin/bash
 
 #solvers=("findminhs" "highs" "scip")
-solvers=("lp")
-testset="exact-private"
-time_limit=300
+solvers=("scip" "highs")
+testset="testset"
+time_limit=120
 seed=1
 
 input_dir="./graphs/$testset"
 
 for solver in "${solvers[@]}"; do
-    output_csv="./graphs/$testset/$solver.csv"
+    output_csv="./graphs/$testset/${solver}_reduced.csv"
     
     # Initialize CSV header based on the solver
     case "$solver" in
