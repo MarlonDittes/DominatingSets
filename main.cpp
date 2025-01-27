@@ -208,15 +208,15 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
                 changed = false;
                 int currentUsage;
                 
-                currentUsage = graph.reductionIsolatedVertex(dominatingSet);
+                currentUsage = graph.reductionIsolatedVertex(dominatingSet, false);
                 if (currentUsage != 0) changed = true;
                 isolatedVertexUsage+= currentUsage;
                 
-                currentUsage = graph.reductionSingleEdgeVertex(dominatingSet);
+                currentUsage = graph.reductionSingleEdgeVertex(dominatingSet, false);
                 if (currentUsage != 0) changed = true;
                 singleEdgeVertexUsage+= currentUsage;
 
-                currentUsage = graph.reductionDominatingVertex(dominatingSet);
+                currentUsage = graph.reductionDominatingVertex(dominatingSet, false);
                 if (currentUsage != 0) changed = true;
                 dominatingVertexUsage+= currentUsage;
             }
@@ -300,7 +300,7 @@ int main(int argc, char* argv[]) {
     // Read graph from file
     auto graph = readGraphFromFile(graphFile);
     bool verbose = false;
-    bool reductions = true;
+    bool reductions = false;
 
     if (reductions){
         std::vector<int> dominatingSet(0);
@@ -313,23 +313,27 @@ int main(int argc, char* argv[]) {
             changed = false;
             int currentUsage;
             
-            currentUsage = graph.reductionIsolatedVertex(dominatingSet);
+            currentUsage = graph.reductionIsolatedVertex(dominatingSet, verbose);
             if (currentUsage != 0) changed = true;
             isolatedVertexUsage+= currentUsage;
             
-            currentUsage = graph.reductionSingleEdgeVertex(dominatingSet);
+            currentUsage = graph.reductionSingleEdgeVertex(dominatingSet, verbose);
             if (currentUsage != 0) changed = true;
             singleEdgeVertexUsage+= currentUsage;
 
-            currentUsage = graph.reductionDominatingVertex(dominatingSet);
+            currentUsage = graph.reductionDominatingVertex(dominatingSet, verbose);
             if (currentUsage != 0) changed = true;
             dominatingVertexUsage+= currentUsage;
         }
 
-        //for (auto node : dominatingSet){
-        //   cout << node << endl;
-        //}
+        if (verbose){
+            for (auto node : dominatingSet){
+                cout << node+1 << endl;
+            }
+        }
     }
+
+    graph.writeHittingSetLP("../analyze.lp");
 
     if (solver == "findminhs"){
         std::string solutionFile = argv[3];

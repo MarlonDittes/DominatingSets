@@ -88,7 +88,7 @@ void Graph::printGraph() const {
     }
 }
 
-int Graph::reductionIsolatedVertex(std::vector<int>& dominatingSet) {
+int Graph::reductionIsolatedVertex(std::vector<int>& dominatingSet, bool verbose) {
     int occurence = 0;
     for (int i = 0; i < vertices; i++) {
         if (adj[i].active && (adj[i].edges.size() == adj[i].offset)) {
@@ -100,7 +100,7 @@ int Graph::reductionIsolatedVertex(std::vector<int>& dominatingSet) {
     return occurence;
 }
 
-int Graph::reductionDominatingVertex(std::vector<int>& dominatingSet) {
+int Graph::reductionDominatingVertex(std::vector<int>& dominatingSet, bool verbose) {
     //TODO: fix order of looking at
     //TODO: DO WE EVEN NEED ORDERING?
     int occurence = 0;
@@ -135,7 +135,7 @@ int Graph::reductionDominatingVertex(std::vector<int>& dominatingSet) {
             }
 
             if (dominates) {
-                //std::cout << u << " dominates " << v << std::endl;
+                if (verbose) std::cout << u+1 << " dominates " << v+1 << std::endl;
                 // Remove dominated node v
                 makeNodeInvisible(v);
                 occurence++;
@@ -148,7 +148,7 @@ int Graph::reductionDominatingVertex(std::vector<int>& dominatingSet) {
     return occurence;
 }
 
-int Graph::reductionSingleEdgeVertex(std::vector<int>& dominatingSet) {
+int Graph::reductionSingleEdgeVertex(std::vector<int>& dominatingSet, bool verbose) {
     int occurence = 0;
     for (int i = 0; i < vertices; i++) {
         if (!adj[i].active || adj[i].edges.size() != adj[i].offset + 1) continue;
@@ -157,7 +157,7 @@ int Graph::reductionSingleEdgeVertex(std::vector<int>& dominatingSet) {
         if (adj[neighbor].active) {
             // Add the neighbor to the dominating set
             dominatingSet.push_back(neighbor);
-            //std::cout << "Choose " << neighbor << " over " << i << std::endl;
+            if (verbose) std::cout << "Choose " << neighbor+1 << " over " << i+1 << std::endl;
             // Remove the neighbor and initial node and mark all neighbors as covered
             makeNodeInvisible(neighbor);
             makeNodeInvisible(i);
