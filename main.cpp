@@ -9,6 +9,7 @@
 #include <regex>
 
 #include "graph.h"
+#include "hypergraph.h"
 
 std::string exec(const std::string& command) {
     std::array<char, 128> buffer;
@@ -106,6 +107,46 @@ Graph readGraphFromFile(const std::string& filename) {
     return graph;
 }
 
+// Function to load a graph from a DIMACS-like .gr file format
+Hypergraph readHypergraphFromFile(const std::string& filename){
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open the file!");
+    }
+
+    int edge_count = 0;
+    std::vector<std::pair<int, int>> edges;
+
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] == 'c') {
+            continue; // Skip comments and empty lines
+        }
+
+        std::stringstream ss(line);
+        if (line[0] == 'p') {
+            std::string descriptor;
+            int numEdges;
+            ss >> descriptor >> descriptor >> edge_count >> numEdges;
+            edges.reserve(numEdges); // Reserve space for edges based on the number of edges specified
+        } else {
+            int u, v;
+            ss >> u >> v;
+            edges.emplace_back(u, v);
+        }
+    }
+
+    file.close();
+
+    // Initialize the graph with the specified number of vertices and add edges
+    Hypergraph hypergraph(edge_count);
+    for (const auto& edge : edges) {
+        hypergraph.addEdge(edge.first, edge.second);
+    }
+
+    return hypergraph;
+}
+
 void outputSolution(const std::vector<int>& solution){
     std::cout << solution.size() << std::endl;
     for (auto elem : solution){
@@ -196,31 +237,16 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
         // Only process .gr files
         if (filename.size() >= 3 && filename.substr(filename.size() - 3) == ".gr") {
             std::string filepath = folderPath + "/" + filename;
-            auto graph = readGraphFromFile(filepath);
+            auto hypergraph = readHypergraphFromFile(filepath);
             
             std::vector<int> dominatingSet(0);
             int isolatedVertexUsage = 0;
             int singleEdgeVertexUsage = 0;
             int dominatingVertexUsage = 0;
-            bool changed = true;
 
-            while (changed){
-                changed = false;
-                int currentUsage;
-                
-                currentUsage = graph.reductionIsolatedVertex(dominatingSet, false);
-                if (currentUsage != 0) changed = true;
-                isolatedVertexUsage+= currentUsage;
-                
-                currentUsage = graph.reductionSingleEdgeVertex(dominatingSet, false);
-                if (currentUsage != 0) changed = true;
-                singleEdgeVertexUsage+= currentUsage;
-
-                currentUsage = graph.reductionDominatingVertex(dominatingSet, false);
-                if (currentUsage != 0) changed = true;
-                dominatingVertexUsage+= currentUsage;
-            }
-            
+            isolatedVertexUsage = hypergraph.reductionIsolatedVertex(dominatingSet, false);
+            singleEdgeVertexUsage = hypergraph.reductionSingleEdgeVertex(dominatingSet, false);
+            dominatingVertexUsage = hypergraph.reductionDominatingEdge(dominatingSet, false);
 
             // Write the results to the CSV
             csvFile << filename << ","
@@ -285,7 +311,6 @@ int main(int argc, char* argv[]) {
     //generateCSVForGraphs("../graphs/" + name, "../graphs/" + name + "/properties.csv");
     //generateReductionCSV("../graphs/" + name, "../graphs/" + name + "/reductions.csv");
 
-    ///*
     // Ensure the correct number of arguments are provided
     if (argc == 1) {
         std::cerr << "Usage: " << argv[0] << " <graphfile> <solver>" << std::endl;
@@ -299,9 +324,11 @@ int main(int argc, char* argv[]) {
     
     // Read graph from file
     auto graph = readGraphFromFile(graphFile);
+    auto hypergraph = readHypergraphFromFile(graphFile);
     bool verbose = false;
-    bool reductions = false;
-
+    bool reductions = true;
+    
+    /*
     if (reductions){
         std::vector<int> dominatingSet(0);
         int isolatedVertexUsage = 0;
@@ -331,9 +358,33 @@ int main(int argc, char* argv[]) {
                 cout << node+1 << endl;
             }
         }
-    }
+    }*/
 
-    graph.writeHittingSetLP("../analyze.lp");
+
+    
+    if (reductions){
+        std::vector<int> dominatingSet(0);
+        int isolatedVertexUsage = 0;
+        int singleEdgeVertexUsage = 0;
+        int dominatingVertexUsage = 0;
+
+        isolatedVertexUsage = hypergraph.reductionIsolatedVertex(dominatingSet, verbose);
+        singleEdgeVertexUsage = hypergraph.reductionSingleEdgeVertex(dominatingSet, verbose);
+        dominatingVertexUsage = hypergraph.reductionDominatingEdge(dominatingSet, verbose);
+
+        if (verbose){
+            cout << isolatedVertexUsage << endl;
+            cout << singleEdgeVertexUsage << endl;
+            cout << dominatingVertexUsage << endl;
+            cout << dominatingSet.size() << endl;
+            cout << endl;
+
+            for (auto node : dominatingSet){
+                cout << node+1 << endl;
+            }
+        }
+        
+    }
 
     if (solver == "findminhs"){
         std::string solutionFile = argv[3];
@@ -365,7 +416,8 @@ int main(int argc, char* argv[]) {
 
     if (solver == "highs"){
         std::string lpFile = "temp.lp";
-        graph.writeHittingSetILP(lpFile);
+        //graph.writeHittingSetILP(lpFile);
+        hypergraph.writeHittingSetLP(lpFile, true);
 
         std::string command = "./highs " + lpFile;
         std::string output = exec(command);
@@ -382,8 +434,9 @@ int main(int argc, char* argv[]) {
 
     if (solver == "scip"){
         std::string lpFile = "temp.lp";
-        graph.writeHittingSetILP(lpFile);
-
+        //graph.writeHittingSetILP(lpFile);
+        hypergraph.writeHittingSetLP(lpFile, true);
+        
         std::string command = "scip -f " + lpFile;
         std::string output = exec(command);
         if (verbose){
@@ -473,7 +526,6 @@ int main(int argc, char* argv[]) {
 
         std::remove(lpFile.c_str());
     }
-    //*/
     
     return 0;
 }
