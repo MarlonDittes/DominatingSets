@@ -1,0 +1,9 @@
+Name,Vertices,Edges,Density,Max Degree,Lower Bound,Upper Bound,Triangles,Average Degree,Std Dev Degree,Solution Size,Time Taken (seconds),Solution Size_scip,Time Taken (seconds)_scip,Solution Size_scip_reduced,Time Taken (seconds)_scip_reduced,Solution Size_highs_reduced,Time Taken (seconds)_highs_reduced,Isolated,Single Edge,Dominating,Set Size
+bremen_subgraph_100.gr,109,173,0.0293918,4,23.05,35,4,3.17431,0.739998,29,0.45,29,0.25,29,0.21,29,0.44,0,0,4,0
+bremen_subgraph_150.gr,164,259,0.0193775,4,34.0333,51,8,3.15854,0.706581,42,0.21,42,0.25,40,0.39,40,0.23,0,2,6,2
+bremen_subgraph_20.gr,32,48,0.0967742,6,6.25,10,8,3.0,0.901388,9,0.0,9,0.0,9,0.0,9,0.01,0,0,9,0
+bremen_subgraph_200.gr,216,338,0.0145564,6,45.3,68,15,3.12963,0.701752,57,2.63,57,1.15,55,0.48,55,2.74,0,2,12,2
+bremen_subgraph_250.gr,270,411,0.0113176,7,57.7833,90,15,3.04444,0.70308,74,9.82,74,1.63,72,1.62,72,10.43,0,2,0,2
+bremen_subgraph_300.gr,311,477,0.00989524,7,65.7333,105,20,3.06752,0.72525,84,6.9,84,2.29,82,2.83,82,6.89,0,2,18,2
+bremen_subgraph_50.gr,63,98,0.0501792,4,13.3333,23,5,3.11111,0.778911,17,0.07,17,0.04,17,0.03,17,0.07,0,0,4,0
+test.gr,7,9,0.428571,3,1.75,2,3,2.57143,0.494872,2,0.0,2,0.0,-1,-1.0,-1,-1.0,0,0,8,0

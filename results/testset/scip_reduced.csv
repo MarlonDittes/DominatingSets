@@ -1,0 +1,9 @@
+Name,Solution Size,Time Taken (seconds)
+bremen_subgraph_100.gr,29,0.21
+bremen_subgraph_150.gr,40,0.39
+bremen_subgraph_20.gr,9,0
+bremen_subgraph_200.gr,55,0.48
+bremen_subgraph_250.gr,72,1.62
+bremen_subgraph_300.gr,82,2.83
+bremen_subgraph_50.gr,17,0.03
+test.gr,-1,-1

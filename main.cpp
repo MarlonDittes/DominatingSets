@@ -174,7 +174,7 @@ void generateCSVForGraphs(const std::string& folderPath, const std::string& outp
     // Iterate through all files in the directory
     while ((entry = readdir(dir)) != nullptr) {
         std::string filename = entry->d_name;
-
+        if (filename == "exact_040.gr") continue;
         // Only process .gr files
         if (filename.size() >= 3 && filename.substr(filename.size() - 3) == ".gr") {
             std::string filepath = folderPath + "/" + filename;
@@ -307,7 +307,7 @@ using std::cout;
 using std::endl;
 
 int main(int argc, char* argv[]) {
-    //std::string name = "testset";
+    //std::string name = "ds_exact";
     //generateCSVForGraphs("../graphs/" + name, "../graphs/" + name + "/properties.csv");
     //generateReductionCSV("../graphs/" + name, "../graphs/" + name + "/reductions.csv");
 
@@ -324,7 +324,8 @@ int main(int argc, char* argv[]) {
     
     // Read graph from file
     auto graph = readGraphFromFile(graphFile);
-    auto hypergraph = readHypergraphFromFile(graphFile);
+    //auto graph = Graph(0);
+    //auto hypergraph = readHypergraphFromFile(graphFile);
     bool verbose = false;
     bool reductions = true;
     
@@ -361,7 +362,7 @@ int main(int argc, char* argv[]) {
     }*/
 
 
-    
+    /*
     if (reductions){
         std::vector<int> dominatingSet(0);
         int isolatedVertexUsage = 0;
@@ -384,7 +385,7 @@ int main(int argc, char* argv[]) {
             }
         }
         
-    }
+    }*/
 
     if (solver == "findminhs"){
         std::string solutionFile = argv[3];
@@ -416,8 +417,8 @@ int main(int argc, char* argv[]) {
 
     if (solver == "highs"){
         std::string lpFile = "temp.lp";
-        //graph.writeHittingSetILP(lpFile);
-        hypergraph.writeHittingSetLP(lpFile, true);
+        graph.writeHittingSetILP(lpFile);
+        //hypergraph.writeHittingSetLP(lpFile, true);
 
         std::string command = "./highs " + lpFile;
         std::string output = exec(command);
@@ -434,8 +435,8 @@ int main(int argc, char* argv[]) {
 
     if (solver == "scip"){
         std::string lpFile = "temp.lp";
-        //graph.writeHittingSetILP(lpFile);
-        hypergraph.writeHittingSetLP(lpFile, true);
+        graph.writeHittingSetILP(lpFile);
+        //hypergraph.writeHittingSetLP(lpFile, true);
         
         std::string command = "scip -f " + lpFile;
         std::string output = exec(command);

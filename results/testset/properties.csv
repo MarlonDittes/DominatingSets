@@ -1,0 +1,9 @@
+Name,Vertices,Edges,Density,Max Degree,Lower Bound,Upper Bound,Triangles,Average Degree,Std Dev Degree
+bremen_subgraph_20.gr,32,48,0.0967742,6,6.25,10,8,3,0.901388
+bremen_subgraph_300.gr,311,477,0.00989524,7,65.7333,105,20,3.06752,0.72525
+bremen_subgraph_100.gr,109,173,0.0293918,4,23.05,35,4,3.17431,0.739998
+bremen_subgraph_250.gr,270,411,0.0113176,7,57.7833,90,15,3.04444,0.70308
+bremen_subgraph_50.gr,63,98,0.0501792,4,13.3333,23,5,3.11111,0.778911
+test.gr,7,9,0.428571,3,1.75,2,3,2.57143,0.494872
+bremen_subgraph_200.gr,216,338,0.0145564,6,45.3,68,15,3.12963,0.701752
+bremen_subgraph_150.gr,164,259,0.0193775,4,34.0333,51,8,3.15854,0.706581
