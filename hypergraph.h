@@ -6,6 +6,7 @@
 #include <fstream>
 #include <set>
 #include <algorithm>
+#include <unordered_map>
 
 class Hypergraph {
 private:
@@ -22,6 +23,7 @@ public:
     int reductionSingleEdgeVertex(std::vector<int>& dominatingSet, bool verbose);
     int reductionDominatingEdge(std::vector<int>& dominatingSet, bool verbose);
     //int reductionDominatingVertex(std::vector<int>& dominatingSet, bool verbose);
+    int reductionCountingRule(std::vector<int>& dominatingSet, bool verbose);
 
     void writeHittingSetLP(const std::string &outputFile, bool ILP) const;
 };

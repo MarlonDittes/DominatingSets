@@ -228,11 +228,12 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
     }
 
     // Write CSV header
-    csvFile << "Name,Isolated,Single Edge,Dominating,Set Size" << std::endl;
+    csvFile << "Name,Isolated,Single Edge,Dominating,Counting Rule" << std::endl;
 
     // Iterate through all files in the directory
     while ((entry = readdir(dir)) != nullptr) {
         std::string filename = entry->d_name;
+        if (filename == "exact_040.gr") continue;
 
         // Only process .gr files
         if (filename.size() >= 3 && filename.substr(filename.size() - 3) == ".gr") {
@@ -243,17 +244,19 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
             int isolatedVertexUsage = 0;
             int singleEdgeVertexUsage = 0;
             int dominatingVertexUsage = 0;
+            int countingRuleUsage = 0;
 
             isolatedVertexUsage = hypergraph.reductionIsolatedVertex(dominatingSet, false);
             singleEdgeVertexUsage = hypergraph.reductionSingleEdgeVertex(dominatingSet, false);
             dominatingVertexUsage = hypergraph.reductionDominatingEdge(dominatingSet, false);
+            countingRuleUsage = hypergraph.reductionCountingRule(dominatingSet, false);
 
             // Write the results to the CSV
             csvFile << filename << ","
                     << isolatedVertexUsage << ","
                     << singleEdgeVertexUsage << ","
                     << dominatingVertexUsage << ","
-                    << dominatingSet.size() << std::endl;
+                    << countingRuleUsage << std::endl;
         }
     }
 
@@ -307,9 +310,9 @@ using std::cout;
 using std::endl;
 
 int main(int argc, char* argv[]) {
-    //std::string name = "ds_exact";
-    //generateCSVForGraphs("../graphs/" + name, "../graphs/" + name + "/properties.csv");
-    //generateReductionCSV("../graphs/" + name, "../graphs/" + name + "/reductions.csv");
+    std::string name = "ds_exact";
+    //generateCSVForGraphs("../graphs/" + name, "../results/" + name + "/properties.csv");
+    generateReductionCSV("../graphs/" + name, "../results/" + name + "/reductions.csv");
 
     // Ensure the correct number of arguments are provided
     if (argc == 1) {
@@ -323,8 +326,8 @@ int main(int argc, char* argv[]) {
     std::string solver = argv[2];
     
     // Read graph from file
-    auto graph = readGraphFromFile(graphFile);
-    //auto graph = Graph(0);
+    //auto graph = readGraphFromFile(graphFile);
+    auto graph = Graph(0);
     //auto hypergraph = readHypergraphFromFile(graphFile);
     bool verbose = false;
     bool reductions = true;
