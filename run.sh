@@ -1,14 +1,15 @@
 #!/bin/bash
 
-solvers=("nusc")
-testset="testset"
-time_limit=10
+solvers=("highs")
+testset="ds_exact"
+time_limit=1800
 seed=1
+start=14
 
 input_dir="./graphs/$testset"
 
 for solver in "${solvers[@]}"; do
-    output_csv="./results/$testset/${solver}.csv"
+    output_csv="./results/$testset/${solver}_reduced.csv"
     
     # Initialize CSV header based on the solver
     case "$solver" in
@@ -29,6 +30,10 @@ for solver in "${solvers[@]}"; do
     
     # Process each graph file for the current solver
     for graph_file in "$input_dir"/*.gr; do
+        graph_number=$(basename "$graph_file" | grep -o '[0-9]\+' | head -n 1)
+        if [ "$graph_number" -lt $start ]; then
+            continue
+        fi
         case "$solver" in
             "findminhs")
                 time_taken=$( { time timeout $time_limit ./build/main "$graph_file" findminhs solution.json settings.json; } 2>&1 | grep real | awk '{split($2, a, /m|s/); print a[1]*60 + a[2]}')
