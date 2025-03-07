@@ -228,7 +228,7 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
     }
 
     // Write CSV header
-    csvFile << "Name,Isolated,Single Edge,Dominating,Counting Rule" << std::endl;
+    csvFile << "Name,Isolated,Single Edge,Dominating,Counting Rule,Set Size" << std::endl;
 
     // Iterate through all files in the directory
     while ((entry = readdir(dir)) != nullptr) {
@@ -256,7 +256,8 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
                     << isolatedVertexUsage << ","
                     << singleEdgeVertexUsage << ","
                     << dominatingVertexUsage << ","
-                    << countingRuleUsage << std::endl;
+                    << countingRuleUsage << ","
+                    << dominatingSet.size() << std::endl;
         }
     }
 
@@ -310,9 +311,9 @@ using std::cout;
 using std::endl;
 
 int main(int argc, char* argv[]) {
-    std::string name = "ds_exact";
+    //std::string name = "ds_exact";
     //generateCSVForGraphs("../graphs/" + name, "../results/" + name + "/properties.csv");
-    generateReductionCSV("../graphs/" + name, "../results/" + name + "/reductions.csv");
+    //generateReductionCSV("../graphs/" + name, "../results/" + name + "/reductions.csv");
 
     // Ensure the correct number of arguments are provided
     if (argc == 1) {
@@ -328,7 +329,7 @@ int main(int argc, char* argv[]) {
     // Read graph from file
     //auto graph = readGraphFromFile(graphFile);
     auto graph = Graph(0);
-    //auto hypergraph = readHypergraphFromFile(graphFile);
+    auto hypergraph = readHypergraphFromFile(graphFile);
     bool verbose = false;
     bool reductions = true;
     
@@ -365,30 +366,34 @@ int main(int argc, char* argv[]) {
     }*/
 
 
-    /*
+    
     if (reductions){
         std::vector<int> dominatingSet(0);
         int isolatedVertexUsage = 0;
         int singleEdgeVertexUsage = 0;
         int dominatingVertexUsage = 0;
+        int countingRuleUsage = 0;
 
         isolatedVertexUsage = hypergraph.reductionIsolatedVertex(dominatingSet, verbose);
         singleEdgeVertexUsage = hypergraph.reductionSingleEdgeVertex(dominatingSet, verbose);
         dominatingVertexUsage = hypergraph.reductionDominatingEdge(dominatingSet, verbose);
+        countingRuleUsage = hypergraph.reductionCountingRule(dominatingSet, verbose);
 
         if (verbose){
             cout << isolatedVertexUsage << endl;
             cout << singleEdgeVertexUsage << endl;
             cout << dominatingVertexUsage << endl;
+            cout << countingRuleUsage << endl;
             cout << dominatingSet.size() << endl;
             cout << endl;
 
-            for (auto node : dominatingSet){
-                cout << node+1 << endl;
-            }
+            
+            //for (auto node : dominatingSet){
+            //    cout << node+1 << endl;
+            //}
         }
         
-    }*/
+    }
 
     if (solver == "findminhs"){
         std::string solutionFile = argv[3];
@@ -420,8 +425,8 @@ int main(int argc, char* argv[]) {
 
     if (solver == "highs"){
         std::string lpFile = "temp.lp";
-        graph.writeHittingSetILP(lpFile);
-        //hypergraph.writeHittingSetLP(lpFile, true);
+        //graph.writeHittingSetILP(lpFile);
+        hypergraph.writeHittingSetLP(lpFile, true);
 
         std::string command = "./highs " + lpFile;
         std::string output = exec(command);
@@ -438,8 +443,8 @@ int main(int argc, char* argv[]) {
 
     if (solver == "scip"){
         std::string lpFile = "temp.lp";
-        graph.writeHittingSetILP(lpFile);
-        //hypergraph.writeHittingSetLP(lpFile, true);
+        //graph.writeHittingSetILP(lpFile);
+        hypergraph.writeHittingSetLP(lpFile, true);
         
         std::string command = "scip -f " + lpFile;
         std::string output = exec(command);
