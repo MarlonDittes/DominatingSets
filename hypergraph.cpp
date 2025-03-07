@@ -1,6 +1,6 @@
 #include "hypergraph.h"
 
-Hypergraph::Hypergraph(int edge_count) : hyperedges(edge_count), active(edge_count, true), covered(edge_count, false) {}
+Hypergraph::Hypergraph(int edge_count) : hyperedges(edge_count), useConstraint(edge_count, true), useVariable(edge_count, true) {}
 
 void Hypergraph::addEdge(int u, int v){
     hyperedges[u-1].push_back(v-1);
@@ -10,8 +10,8 @@ void Hypergraph::addEdge(int u, int v){
 void Hypergraph::printHypergraph(){
     std::cout << "Hypergraph:" << std::endl;
     for (size_t i = 0; i < hyperedges.size(); ++i) {
-        if (!active[i]) std::cout << "I ";
-        if (covered[i]) std::cout << "C ";
+        if (!useConstraint[i]) std::cout << "C ";
+        if (!useVariable[i]) std::cout << "V ";
 
         std::cout << "Edge " << i+1 << ": ";
         for (int v : hyperedges[i]) {
@@ -28,8 +28,8 @@ int Hypergraph::reductionIsolatedVertex(std::vector<int>& dominatingSet, bool ve
     for (size_t i = 0; i < hyperedges.size(); ++i) {
         if (hyperedges[i].size() == 0) {
             dominatingSet.push_back(i);
-            active[i] = false;
-            covered[i] = true;
+            useConstraint[i] = false;
+            useVariable[i] = false;
             reductionCount++;
 
             if (verbose) std::cout << "Edge "  << i+1 << " was isolated." << std::endl;
@@ -41,19 +41,18 @@ int Hypergraph::reductionIsolatedVertex(std::vector<int>& dominatingSet, bool ve
 int Hypergraph::reductionSingleEdgeVertex(std::vector<int>& dominatingSet, bool verbose){
     int reductionCount = 0;
     for (size_t i = 0; i < hyperedges.size(); ++i) {
-        if (!active[i]) continue; // Disregard inactive hyperedges
+        if (!useConstraint[i]) continue; // Make sure we still need to cover i
 
         if (hyperedges[i].size() == 1) {
             int neighbor = hyperedges[i][0];
-            if (!active[neighbor]) continue; // Case handled by IsolatedVertex reduction
+            if (!useVariable[neighbor]) continue;
 
             dominatingSet.push_back(neighbor);
-            active[i] = false;
-            covered[i] = true;
-            active[neighbor] = false;
-            covered[neighbor] = true;
+            useVariable[i] = false;     // Will never need i in optimal solution
+            useConstraint[neighbor] = false;
+            useVariable[neighbor] = false;
             for (auto v : hyperedges[neighbor]){ // All adjacent vertices' constraints are now inactive
-                active[v] = false;
+                useConstraint[v] = false;
             }
             reductionCount++;
 
@@ -66,23 +65,22 @@ int Hypergraph::reductionSingleEdgeVertex(std::vector<int>& dominatingSet, bool 
 int Hypergraph::reductionDominatingEdge(std::vector<int>& dominatingSet, bool verbose){
     int reductionCount = 0;
     for (size_t i = 0; i < hyperedges.size(); ++i) {
-        if (!active[i]) continue; // Disregard inactive hyperedges
+        if (!useVariable[i]) continue; // Make sure i is not yet dominated
 
         std::set<int> edgeSet(hyperedges[i].begin(), hyperedges[i].end());
         edgeSet.insert(i); // Include its own ID
 
         for (size_t j = 0; j < hyperedges.size(); ++j) {
-            if (i == j || !active[j]) continue; // Skip itself and inactive edges
+            if (i == j || !useVariable[j]) continue; // Skip itself and already dominated variables
 
             if (hyperedges[j].size() > hyperedges[i].size()) continue; // If other edge contains more vertices, initial edge can't dominate
 
             std::set<int> otherEdgeSet(hyperedges[j].begin(), hyperedges[j].end());
             otherEdgeSet.insert(j); // Include its own ID
 
-            // If edge i dominates edge j, deactivate edge j
+            // If edge i dominates edge j, j is never in optimal solution
             if (std::includes(edgeSet.begin(), edgeSet.end(), otherEdgeSet.begin(), otherEdgeSet.end())) {
-                //active[j] = false;
-                covered[j] = true;
+                useVariable[j] = false;
                 reductionCount++;
 
                 if (verbose) std::cout << "Edge " << i + 1 << " dominates " << j + 1 << std::endl;
@@ -109,7 +107,7 @@ int Hypergraph::reductionCountingRule(std::vector<int>& dominatingSet, bool verb
 
     // Iterate over each hyperedge (potential set R)
     for (size_t i = 0; i < hyperedges.size(); ++i) {
-        if (!active[i]) continue; // Skip inactive edges
+        if (!useConstraint[i]) continue; // Make sure we still need to cover i
 
         std::set<int> R(hyperedges[i].begin(), hyperedges[i].end());
         R.insert(i); // Each hyperedge includes its own ID
@@ -127,7 +125,7 @@ int Hypergraph::reductionCountingRule(std::vector<int>& dominatingSet, bool verb
         // Compute q: elements in sets containing a frequency-two element from R but not in R
         std::set<int> externalElements;
         for (size_t j = 0; j < hyperedges.size(); ++j) {
-            if (i == j || !active[j]) continue;
+            if (i == j) continue; //Skip itself
 
             // Construct the set for hyperedge j, explicitly adding j
             std::set<int> hyperedgeJ(hyperedges[j].begin(), hyperedges[j].end());
@@ -141,21 +139,21 @@ int Hypergraph::reductionCountingRule(std::vector<int>& dominatingSet, bool verb
         }
         int q = externalElements.size();
 
-        // Apply Reduction Rule 6 if q < r2
+        // Apply Counting Rule if q < r2
         if (q < r2) {
             dominatingSet.push_back(i);
             
-            active[i] = false;
-            covered[i] = true;
+            useConstraint[i] = false;
+            useVariable[i] = false;
 
             for (auto& j : hyperedges[i]){
-                active[j] = false;
+                useConstraint[j] = false;
             }
 
             reductionCount++;
 
             if (verbose) {
-                std::cout << "Reduction Rule 6: Removed hyperedge " << i + 1 << " (r2 = " << r2 << ", q = " << q << ")" << std::endl;
+                std::cout << "Reduction Counting Rule: Removed hyperedge " << i + 1 << " (r2 = " << r2 << ", q = " << q << ")" << std::endl;
             }
         }
     }
@@ -174,7 +172,7 @@ void Hypergraph::writeHittingSetLP(const std::string &outputFile, bool ILP) cons
     file << "Minimize\n obj: ";
     bool first = true;
     for (size_t i = 0; i < hyperedges.size(); ++i) {
-        if (covered[i]) continue; // Skip vertices which are already satisfied
+        if (!useVariable[i]) continue; // Skip vertices which are already satisfied
 
         if (!first) {
             file << " + ";
@@ -186,38 +184,41 @@ void Hypergraph::writeHittingSetLP(const std::string &outputFile, bool ILP) cons
 
     // Write the constraints (one per closed neighborhood)
     for (size_t i = 0; i < hyperedges.size(); ++i) {
-        if (!active[i]) continue; // Skip inactive edges
-
-        file << " c" << i + 1 << ": ";
-        std::set<int> neighborhood;
+        if (!useConstraint[i]) continue; // Skip inactive edges
 
         std::set<int> coveredVertices(hyperedges[i].begin(), hyperedges[i].end());
         coveredVertices.insert(i); // Each hyperedge includes its own ID
 
         int count = 0;
+        std::stringstream constraintStream;
+        
         for (int v : coveredVertices) {
-            if (covered[v]) continue; // Skip vertices which are already satisfied
+            if (!useVariable[v]) continue; // Skip already satisfied vertices
 
             if (count > 0) {
-                file << " + ";
+                constraintStream << " + ";
             }
-            file << "x" << v + 1;
+            constraintStream << "x" << v + 1;
             count++;
         }
-        if (count > 0) file << " >= 1\n";
+
+        // Only write the constraint if there is at least one valid variable
+        if (count > 0) {
+            file << " c" << i + 1 << ": " << constraintStream.str() << " >= 1\n";
+        }
     }
 
     // Write bounds and variable types
     file << "\nBounds\n";
     for (size_t i = 0; i < hyperedges.size(); ++i) {
-        if (covered[i]) continue; // Skip vertices which are already satisfied
+        if (!useVariable[i]) continue; // Skip vertices which are already satisfied
         file << " 0 <= x" << i + 1 << " <= 1\n";
     }
 
     if (ILP){
         file << "\nBinary\n";
         for (size_t i = 0; i < hyperedges.size(); ++i) {
-            if (covered[i]) continue; // Skip vertices which are already satisfied
+            if (!useVariable[i]) continue; // Skip vertices which are already satisfied
             file << " x" << i + 1 << "\n";
         }
     }

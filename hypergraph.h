@@ -7,12 +7,13 @@
 #include <set>
 #include <algorithm>
 #include <unordered_map>
+#include <sstream>
 
 class Hypergraph {
 private:
     std::vector<std::vector<int>> hyperedges;
-    std::vector<bool> active; // false means constraint is irrelevant by now
-    std::vector<bool> covered; // true means dont use in ILP
+    std::vector<bool> useConstraint; // false means constraint is irrelevant by now
+    std::vector<bool> useVariable; // false means dont use in ILP //SWAPPED!!
 
 public:
     Hypergraph(int edge_count);
