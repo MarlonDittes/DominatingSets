@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <cmath>
 #include <regex>
+#include <chrono>
 
 #include "graph.h"
 #include "hypergraph.h"
@@ -228,7 +229,7 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
     }
 
     // Write CSV header
-    csvFile << "Name,Isolated,Single Edge,Dominating,Counting Rule,Set Size" << std::endl;
+    csvFile << "Name,Isolated,Single Edge,Dominating,Counting Rule,Set Size,Time (s)" << std::endl;
 
     // Iterate through all files in the directory
     while ((entry = readdir(dir)) != nullptr) {
@@ -238,6 +239,9 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
         // Only process .gr files
         if (filename.size() >= 3 && filename.substr(filename.size() - 3) == ".gr") {
             std::string filepath = folderPath + "/" + filename;
+
+            auto start = std::chrono::high_resolution_clock::now();
+
             auto hypergraph = readHypergraphFromFile(filepath);
             
             std::vector<int> dominatingSet(0);
@@ -251,13 +255,17 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
             dominatingVertexUsage = hypergraph.reductionDominatingEdge(dominatingSet, false);
             countingRuleUsage = hypergraph.reductionCountingRule(dominatingSet, false);
 
+            auto end = std::chrono::high_resolution_clock::now();
+            double elapsedSec = std::chrono::duration<double>(end - start).count();  // Convert to seconds
+
             // Write the results to the CSV
             csvFile << filename << ","
                     << isolatedVertexUsage << ","
                     << singleEdgeVertexUsage << ","
                     << dominatingVertexUsage << ","
                     << countingRuleUsage << ","
-                    << dominatingSet.size() << std::endl;
+                    << dominatingSet.size() << ","
+                    << elapsedSec << std::endl;
         }
     }
 
@@ -301,6 +309,18 @@ std::pair<double, double> parseReport(const std::string& report, const std::stri
         }
 
         return result;
+    } else if (solver == "gurobi") {
+        std::regex primalBoundRegex(R"(Best objective ([+-]?\d+\.?\d*(e[+-]?\d+)?)\,)");
+        std::regex timingRegex(R"(Explored \d+ nodes \(\d+ simplex iterations\) in ([\d\.]+) seconds)");
+        
+        std::smatch match;
+        
+        if (std::regex_search(report, match, primalBoundRegex) && match.size() > 1) {
+            result.first = std::stod(match[1]);
+        }
+        if (std::regex_search(report, match, timingRegex) && match.size() > 1) {
+            result.second = std::stod(match[1]);
+        }
     }
     
 
@@ -313,7 +333,7 @@ using std::endl;
 int main(int argc, char* argv[]) {
     //std::string name = "ds_exact";
     //generateCSVForGraphs("../graphs/" + name, "../results/" + name + "/properties.csv");
-    //generateReductionCSV("../graphs/" + name, "../results/" + name + "/reductions.csv");
+    //generateReductionCSV("../graphs/" + name, "../results/" + name + "/reductions2.csv");
 
     // Ensure the correct number of arguments are provided
     if (argc == 1) {
@@ -330,8 +350,9 @@ int main(int argc, char* argv[]) {
     //auto graph = readGraphFromFile(graphFile);
     auto graph = Graph(0);
     auto hypergraph = readHypergraphFromFile(graphFile);
+    //auto hypergraph = Hypergraph(0);
     bool verbose = false;
-    bool reductions = true;
+    bool reductions = false;
     
     /*
     if (reductions){
@@ -464,7 +485,8 @@ int main(int argc, char* argv[]) {
 
         // Convert to SAT format for domsat solver
         std::string SAT_file = "temp.sat"; 
-        graph.graphToSAT(SAT_file);
+        //graph.graphToSAT(SAT_file);
+        hypergraph.hypergraphToSAT(SAT_file);
     
         // Run domsat and capture output
         std::string command = "./DomSAT " + SAT_file + " " + cutoff;
@@ -480,10 +502,11 @@ int main(int argc, char* argv[]) {
     if (solver == "nusc"){
         std::string cutoff = argv[3];
         std::string seed = argv[4];
-
+        
         // Convert to SAT format for NuSC solver
         std::string SAT_file = "temp.sat"; 
-        graph.graphToSAT(SAT_file);
+        //graph.graphToSAT(SAT_file);
+        hypergraph.hypergraphToSAT(SAT_file);
     
         // Run NuSC and capture output
         std::string command = "./NuSC " + SAT_file + " " + cutoff + " " + seed;
@@ -532,6 +555,24 @@ int main(int argc, char* argv[]) {
         } else{
             cout << "feasible" << endl;
         }
+
+        std::remove(lpFile.c_str());
+    }
+
+    if (solver == "gurobi"){
+        std::string lpFile = "temp.lp";
+        //graph.writeHittingSetILP(lpFile);
+        hypergraph.writeHittingSetLP(lpFile, true);
+        
+        std::string command = "gurobi_cl " + lpFile;
+        std::string output = exec(command);
+        if (verbose){
+            std::cout << output;
+            std::cout << std::endl;
+        }
+        
+        auto result = parseReport(output, solver);
+        cout << result.first << "," << result.second << endl;
 
         std::remove(lpFile.c_str());
     }
