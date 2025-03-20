@@ -228,3 +228,105 @@ void Hypergraph::writeHittingSetLP(const std::string &outputFile, bool ILP) cons
     file.close();
 
 }
+
+/*
+void Hypergraph::hypergraphToSAT(const std::string& outputFile) const{
+    std::ofstream file(outputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open the output file!");
+    }
+
+    // Writing the hypergraph in custom text format described in README.md of https://github.com/Felerius/findminhs
+    file << hyperedges.size() << " " << hyperedges.size() << "\n"; // num_vertices num_hyperedges
+
+    for (int u = 0; u < hyperedges.size(); ++u){
+        file << 1 << " ";
+    }
+    file << "\n";
+
+    for (int u = 0; u < hyperedges.size(); ++u) {
+        // Insert closed neighborhoods of each vertex as hyperedge
+        file << hyperedges[u].size() + 1 << " "; // size of the closed neighborhood
+        for (int v : hyperedges[u]) {
+            file << v + 1 << " "; // print each node in the neighborhood
+        }
+        file << u + 1<< "\n"; // Include the vertex itself
+    }
+
+    file.close();
+}*/
+
+void Hypergraph::hypergraphToSAT(const std::string& outputFile) const{
+    std::ofstream file(outputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open the output file!");
+    }
+
+    std::vector<int> activeSetIndices(hyperedges.size(), -1);
+    std::unordered_map<int, int> setReindexMap;
+    
+    // What we may pick after reductions (ignore disallowed)
+    int setNum = 0;
+    for (size_t i = 0; i < hyperedges.size(); ++i) {
+        if (useVariable[i]) {       //Need to swap variable and sets when going from dominating set to set cover problem
+            activeSetIndices[i] = setNum;
+            setReindexMap[i] = setNum++;
+        }
+    }
+
+    // What still needs to be covered after reductions
+    int varNum = 0;
+    std::vector<int> activeVarIndices(useVariable.size(), -1);
+    for (size_t i = 0; i < useVariable.size(); ++i) {
+        if (useConstraint[i]) {
+            activeVarIndices[i] = varNum++;
+        }
+    }
+    
+    //std::cout << varNum << " " << setNum << std::endl;
+    //std::cout << std::endl;
+    //for (auto var : activeVarIndices){
+    //    std::cout << var << std::endl;
+    //}
+    //std::cout << std::endl;
+    //for (auto var : activeSetIndices){
+    //    std::cout << var << std::endl;
+    //}
+
+    // Print variable count and set count
+    file << varNum << " " << setNum << "\n";
+
+    // Print set weights  =1 for all sets
+    for (int i = 0; i < setNum; ++i) {
+        file << "1 ";
+    }
+    file << "\n";
+    
+    // Print variable-to-set mapping
+    for (size_t i = 0; i < useConstraint.size(); ++i) {
+        if (!useConstraint[i]) continue; //Skip if this variable is already being covered by a set via previous reductions
+        
+        int varIndex = activeVarIndices[i];
+        std::vector<int> coveredSets;
+        
+        for (auto elem : hyperedges[i]) {
+            if (useVariable[elem]) {
+                coveredSets.push_back(setReindexMap[elem]);
+            }
+        }
+        if (useVariable[i]){
+            coveredSets.push_back(setReindexMap[i]); //variable itself contained
+        }
+        
+        // Print number of sets covering this variable
+        file << coveredSets.size() << " ";
+        
+        // Print the actual list of sets
+        for (int setID : coveredSets) {
+            file << setID+1 << " ";
+        }
+        file << "\n";
+    }
+
+    file.close();
+}

@@ -13,7 +13,7 @@ class Hypergraph {
 private:
     std::vector<std::vector<int>> hyperedges;
     std::vector<bool> useConstraint; // false means constraint is irrelevant by now
-    std::vector<bool> useVariable; // false means dont use in ILP //SWAPPED!!
+    std::vector<bool> useVariable; // false means dont use in ILP
 
 public:
     Hypergraph(int edge_count);
@@ -27,6 +27,6 @@ public:
     int reductionCountingRule(std::vector<int>& dominatingSet, bool verbose);
 
     void writeHittingSetLP(const std::string &outputFile, bool ILP) const;
+    void hypergraphToSAT(const std::string& outputFile) const;
 };
-
 #endif // HYPERGRAPH_H
