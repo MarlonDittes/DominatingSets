@@ -1,10 +1,14 @@
 #include "hypergraph.h"
 
-Hypergraph::Hypergraph(int edge_count) : hyperedges(edge_count), useConstraint(edge_count, true), useVariable(edge_count, true) {}
+Hypergraph::Hypergraph(int num_hyperedges, int num_constraints, int num_variables) : hyperedges(num_hyperedges), useConstraint(num_constraints, true), useVariable(num_variables, true) {}
 
 void Hypergraph::addEdge(int u, int v){
     hyperedges[u-1].push_back(v-1);
     hyperedges[v-1].push_back(u-1);
+}
+
+void Hypergraph::setHyperedges(const std::vector<std::vector<int>>& sets){
+    this->hyperedges = sets;
 }
 
 void Hypergraph::printHypergraph(){
@@ -326,6 +330,34 @@ void Hypergraph::hypergraphToSAT(const std::string& outputFile) const{
             file << setID+1 << " ";
         }
         file << "\n";
+    }
+
+    file.close();
+}
+
+void Hypergraph::writeMaxSAT(const std::string& outputFile) const{
+    std::ofstream file(outputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + outputFile);
+    }
+
+
+    // Write hard clauses (one per vertex)
+    for (size_t i = 0; i < hyperedges.size(); ++i) {
+        if (!useConstraint[i]) continue; // Skip inactive edges
+            
+        file << "h " << i+1; //include self
+        for (int neighbor : hyperedges[i]){ //include neighbors
+            if (!useVariable[neighbor]) continue; // Skip already satisfied vertices
+            file << " " << neighbor+1;
+        }
+        file << " 0\n";
+    }
+
+    // Write soft clauses (one per vertex)
+    for (size_t i = 0; i < hyperedges.size(); ++i) {
+        //if (!useVariable[i]) continue; // Skip already satisfied vertices
+        file << "1 -" << i+1 << " 0\n";
     }
 
     file.close();

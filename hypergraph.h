@@ -16,8 +16,9 @@ private:
     std::vector<bool> useVariable; // false means dont use in ILP
 
 public:
-    Hypergraph(int edge_count);
+    Hypergraph(int num_hyperedges, int num_constraints, int num_variables);
     void addEdge(int u, int v);
+    void setHyperedges(const std::vector<std::vector<int>>& sets);
     void printHypergraph();
 
     int reductionIsolatedVertex(std::vector<int>& dominatingSet, bool verbose);
@@ -28,5 +29,6 @@ public:
 
     void writeHittingSetLP(const std::string &outputFile, bool ILP) const;
     void hypergraphToSAT(const std::string& outputFile) const;
+    void writeMaxSAT(const std::string& outputFile) const;
 };
 #endif // HYPERGRAPH_H

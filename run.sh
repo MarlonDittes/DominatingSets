@@ -1,22 +1,34 @@
 #!/bin/bash
 
-solvers=("highs")
+solvers=("uwrmaxsat")
 testset="ds_exact"
-time_limit=1800
+time_limit=7200
 seed=1
-start=14
+start=1
+
+selected_graph_numbers=(33 34 37 57 58 62 63 66 71 72 75 76 81 84 87 88 92 93 97)
 
 input_dir="./graphs/$testset"
 
+is_selected() {
+    local number=$1
+    for selected in "${selected_graph_numbers[@]}"; do
+        if [ "$selected" -eq "$number" ]; then
+            return 0  # found
+        fi
+    done
+    return 1  # not found
+}
+
 for solver in "${solvers[@]}"; do
-    output_csv="./results/$testset/${solver}_reduced.csv"
+    output_csv="./results/$testset/${solver}_missing.csv"
     
     # Initialize CSV header based on the solver
     case "$solver" in
         "findminhs")
             echo "Name,Time Taken (seconds)" > "$output_csv"
             ;;
-        "highs" | "scip" | "lp")
+        "highs" | "scip" | "lp" | "gurobi" | "uwrmaxsat")
             echo "Name,Solution Size,Time Taken (seconds)" > "$output_csv"
             ;;
         "domsat" | "nusc")
@@ -34,6 +46,12 @@ for solver in "${solvers[@]}"; do
         if [ "$graph_number" -lt $start ]; then
             continue
         fi
+
+        if ! is_selected "$graph_number"; then
+            continue  # Skip graphs not in selected list
+        fi
+
+
         case "$solver" in
             "findminhs")
                 time_taken=$( { time timeout $time_limit ./build/main "$graph_file" findminhs solution.json settings.json; } 2>&1 | grep real | awk '{split($2, a, /m|s/); print a[1]*60 + a[2]}')
@@ -44,7 +62,7 @@ for solver in "${solvers[@]}"; do
 
                 echo "$(basename "$graph_file"),$time_taken" >> "$output_csv"
                 ;;
-            "highs" | "scip" | "lp")
+            "highs" | "scip" | "lp" | "gurobi")
                 ./runlim --time-limit=$time_limit ./build/main "$graph_file" "$solver" > temp.txt
                 output=$(cat temp.txt)
 
@@ -83,6 +101,15 @@ for solver in "${solvers[@]}"; do
 
                 echo "$(basename "$graph_file"),$solution_size,$time_taken,$exec_time" >> "$output_csv"
                 rm -f temp.txt time_log.txt
+                ;;
+            "uwrmaxsat")
+                start_time=$(date +%s)  # Start timestamp
+                solution=$(timeout "$time_limit" ./build/main "$graph_file" "$solver")
+                end_time=$(date +%s)    # End timestamp
+
+                elapsed_time=$((end_time - start_time))
+
+                echo "$(basename "$graph_file"),$solution,$elapsed_time" >> "$output_csv"
                 ;;
             *)
                 echo "ERROR: Unsupported solver $solver"

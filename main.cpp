@@ -10,7 +10,7 @@
 #include <chrono>
 
 #include "graph.h"
-#include "hypergraph.h"
+#include "hypergraph2.h"
 
 std::string exec(const std::string& command) {
     std::array<char, 128> buffer;
@@ -115,37 +115,91 @@ Hypergraph readHypergraphFromFile(const std::string& filename){
         throw std::runtime_error("Could not open the file!");
     }
 
-    int edge_count = 0;
-    std::vector<std::pair<int, int>> edges;
+    std::string extension;
+    auto pos = filename.rfind('.');
+    if (pos != std::string::npos) {
+        extension = filename.substr(pos + 1);
+        std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+    }
 
     std::string line;
-    while (std::getline(file, line)) {
-        if (line.empty() || line[0] == 'c') {
-            continue; // Skip comments and empty lines
+    if (extension == "gr"){
+        std::vector<std::pair<int, int>> edges;
+        int vertex_count = 0;
+        int edge_count = 0;
+        
+        while (std::getline(file, line)) {
+            if (line.empty() || line[0] == 'c') {
+                continue; // Skip comments and empty lines
+            }
+            
+            std::stringstream ss(line);
+            if (line[0] == 'p') {
+                std::string descriptor;
+                ss >> descriptor >> descriptor >> vertex_count >> edge_count;
+                edges.reserve(edge_count); // Reserve space for edges based on the number of edges specified
+            } else {
+                int u, v;
+                ss >> u >> v;
+                edges.emplace_back(u, v);
+            }
         }
 
-        std::stringstream ss(line);
-        if (line[0] == 'p') {
-            std::string descriptor;
-            int numEdges;
-            ss >> descriptor >> descriptor >> edge_count >> numEdges;
-            edges.reserve(numEdges); // Reserve space for edges based on the number of edges specified
-        } else {
-            int u, v;
-            ss >> u >> v;
-            edges.emplace_back(u, v);
+        file.close();
+        
+        // Initialize the graph with the specified number of vertices and add edges
+        Hypergraph hypergraph(vertex_count, vertex_count, vertex_count);
+        hypergraph.initEdge(vertex_count);
+        for (const auto& edge : edges) {
+            hypergraph.addEdge(edge.first, edge.second);
         }
-    }
+        hypergraph.setVertexToHyperedges();
 
-    file.close();
+        return hypergraph;
 
-    // Initialize the graph with the specified number of vertices and add edges
-    Hypergraph hypergraph(edge_count);
-    for (const auto& edge : edges) {
-        hypergraph.addEdge(edge.first, edge.second);
-    }
+    } else if (extension == "hgr") {
+        std::vector<std::vector<int>> sets;
+        std::vector<std::vector<int>> part_of;
+        int vertex_count = 0;
+        int set_count = 0;
+        int count = 0;
 
-    return hypergraph;
+        while (std::getline(file, line)) {
+            if (line.empty() || line[0] == 'c') {
+                continue; // Skip comments and empty lines
+            }
+    
+            std::stringstream ss(line);
+            if (line[0] == 'p') {
+                std::string descriptor;
+                ss >> descriptor >> descriptor >> vertex_count >> set_count;
+                sets.reserve(set_count); // Reserve space for edges based on the number of edges specified
+                part_of.resize(vertex_count);
+            } else {
+                std::vector<int> currentSet;
+                int vertex;
+                while (ss >> vertex) {
+                    --vertex;
+                    currentSet.push_back(vertex);
+                    part_of[vertex].push_back(count);
+                }
+
+                sets.push_back(currentSet);
+                count++;
+            }
+        }
+
+        file.close();
+        
+        // Initialize the graph with the specified number of vertices and add edges
+        Hypergraph hypergraph(set_count, set_count, vertex_count);
+        hypergraph.setHyperedges(sets);
+        hypergraph.setVertexToHyperedges(part_of);
+
+        return hypergraph;
+    } else {
+        throw std::runtime_error("Unsupported file extension: " + extension);
+    } 
 }
 
 void outputSolution(const std::vector<int>& solution){
@@ -175,7 +229,18 @@ void generateCSVForGraphs(const std::string& folderPath, const std::string& outp
     // Iterate through all files in the directory
     while ((entry = readdir(dir)) != nullptr) {
         std::string filename = entry->d_name;
-        if (filename == "exact_040.gr") continue;
+
+        std::regex regex("^exact_([0-9]{3})\\.gr$");  // Match "exact_XXX.gr" where XXX is a 3-digit number
+        std::smatch match;
+
+        if (!std::regex_match(filename, match, regex)) continue;
+
+        int fileNumber = std::stoi(match[1].str());
+        if (fileNumber <= 50) continue;
+
+        //if (filename != "exact_039.gr") continue;
+        std::cout << filename << std::endl;
+
         // Only process .gr files
         if (filename.size() >= 3 && filename.substr(filename.size() - 3) == ".gr") {
             std::string filepath = folderPath + "/" + filename;
@@ -229,12 +294,22 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
     }
 
     // Write CSV header
-    csvFile << "Name,Isolated,Single Edge,Dominating,Counting Rule,Set Size,Time (s)" << std::endl;
+    csvFile << "Name,Isolated,Single Edge,Dominating Edge,Dominating Vertex,Counting Rule,Set Size,Time (s)" << std::endl;
 
     // Iterate through all files in the directory
     while ((entry = readdir(dir)) != nullptr) {
         std::string filename = entry->d_name;
-        if (filename == "exact_040.gr") continue;
+
+        std::regex regex("^exact_([0-9]{3})\\.gr$");  // Match "exact_XXX.gr" where XXX is a 3-digit number
+        std::smatch match;
+
+        if (!std::regex_match(filename, match, regex)) continue;
+
+        int fileNumber = std::stoi(match[1].str());
+        //if (fileNumber <= 50) continue;
+
+        if (filename != "exact_040.gr") continue;
+        std::cout << filename << std::endl;
 
         // Only process .gr files
         if (filename.size() >= 3 && filename.substr(filename.size() - 3) == ".gr") {
@@ -244,16 +319,18 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
 
             auto hypergraph = readHypergraphFromFile(filepath);
             
-            std::vector<int> dominatingSet(0);
+            std::set<int> dominatingSet;
             int isolatedVertexUsage = 0;
             int singleEdgeVertexUsage = 0;
+            int dominatingEdgeUsage = 0;
             int dominatingVertexUsage = 0;
             int countingRuleUsage = 0;
 
             isolatedVertexUsage = hypergraph.reductionIsolatedVertex(dominatingSet, false);
             singleEdgeVertexUsage = hypergraph.reductionSingleEdgeVertex(dominatingSet, false);
-            dominatingVertexUsage = hypergraph.reductionDominatingEdge(dominatingSet, false);
             countingRuleUsage = hypergraph.reductionCountingRule(dominatingSet, false);
+            dominatingEdgeUsage = hypergraph.reductionDominatingEdge(dominatingSet, false);
+            dominatingVertexUsage = hypergraph.reductionDominatingVertex(dominatingSet, false);     
 
             auto end = std::chrono::high_resolution_clock::now();
             double elapsedSec = std::chrono::duration<double>(end - start).count();  // Convert to seconds
@@ -262,6 +339,7 @@ void generateReductionCSV(const std::string& folderPath, const std::string& outp
             csvFile << filename << ","
                     << isolatedVertexUsage << ","
                     << singleEdgeVertexUsage << ","
+                    << dominatingEdgeUsage << ","
                     << dominatingVertexUsage << ","
                     << countingRuleUsage << ","
                     << dominatingSet.size() << ","
@@ -322,7 +400,6 @@ std::pair<double, double> parseReport(const std::string& report, const std::stri
             result.second = std::stod(match[1]);
         }
     }
-    
 
     return result;
 }
@@ -332,8 +409,8 @@ using std::endl;
 
 int main(int argc, char* argv[]) {
     //std::string name = "ds_exact";
-    //generateCSVForGraphs("../graphs/" + name, "../results/" + name + "/properties.csv");
-    //generateReductionCSV("../graphs/" + name, "../results/" + name + "/reductions2.csv");
+    //generateCSVForGraphs("../graphs/" + name, "../results/" + name + "/properties2.csv");
+    //generateReductionCSV("../graphs/" + name, "../results/" + name + "/reductions5.csv");
 
     // Ensure the correct number of arguments are provided
     if (argc == 1) {
@@ -350,7 +427,7 @@ int main(int argc, char* argv[]) {
     //auto graph = readGraphFromFile(graphFile);
     auto graph = Graph(0);
     auto hypergraph = readHypergraphFromFile(graphFile);
-    //auto hypergraph = Hypergraph(0);
+    //auto hypergraph = Hypergraph(0,0,0);
     bool verbose = false;
     bool reductions = false;
     
@@ -386,34 +463,33 @@ int main(int argc, char* argv[]) {
         }
     }*/
 
-
-    
     if (reductions){
-        std::vector<int> dominatingSet(0);
+        std::set<int> dominatingSet;
         int isolatedVertexUsage = 0;
         int singleEdgeVertexUsage = 0;
+        int dominatingEdgeUsage = 0;
         int dominatingVertexUsage = 0;
         int countingRuleUsage = 0;
 
         isolatedVertexUsage = hypergraph.reductionIsolatedVertex(dominatingSet, verbose);
         singleEdgeVertexUsage = hypergraph.reductionSingleEdgeVertex(dominatingSet, verbose);
-        dominatingVertexUsage = hypergraph.reductionDominatingEdge(dominatingSet, verbose);
         countingRuleUsage = hypergraph.reductionCountingRule(dominatingSet, verbose);
+        dominatingEdgeUsage = hypergraph.reductionDominatingEdge(dominatingSet, verbose);
+        dominatingVertexUsage = hypergraph.reductionDominatingVertex(dominatingSet, verbose);
 
         if (verbose){
             cout << isolatedVertexUsage << endl;
             cout << singleEdgeVertexUsage << endl;
+            cout << dominatingEdgeUsage << endl;
             cout << dominatingVertexUsage << endl;
             cout << countingRuleUsage << endl;
             cout << dominatingSet.size() << endl;
             cout << endl;
-
             
             //for (auto node : dominatingSet){
             //    cout << node+1 << endl;
             //}
         }
-        
     }
 
     if (solver == "findminhs"){
@@ -564,7 +640,7 @@ int main(int argc, char* argv[]) {
         //graph.writeHittingSetILP(lpFile);
         hypergraph.writeHittingSetLP(lpFile, true);
         
-        std::string command = "gurobi_cl " + lpFile;
+        std::string command = "gurobi_cl Threads=1 " + lpFile;
         std::string output = exec(command);
         if (verbose){
             std::cout << output;
@@ -575,6 +651,36 @@ int main(int argc, char* argv[]) {
         cout << result.first << "," << result.second << endl;
 
         std::remove(lpFile.c_str());
+    }
+
+    if (solver == "uwrmaxsat"){
+        std::string maxsatFile = "temp.maxsat";
+        hypergraph.writeMaxSAT(maxsatFile);
+
+        std::string command = "./uwrmaxsat -v0 -no-bin -no-sat -no-par -maxpre-time=60 -scip-cpu=800 -scip-delay=400 -m -bm " + maxsatFile;
+        std::string output = exec(command);
+        if (verbose){
+            std::cout << output;
+            std::cout << std::endl;
+        }
+
+        std::smatch match;
+        std::regex lastORegex(R"(o\s+(\d+))");
+        auto lastOIt = std::sregex_iterator(output.begin(), output.end(), lastORegex);
+        auto lastOMatch = std::sregex_iterator();
+
+        int solutionSize = -1;
+
+        if (lastOIt != lastOMatch) {
+            for (auto it = lastOIt; it != lastOMatch; ++it) {
+                match = *it;
+            }
+            solutionSize = std::stoi(match[1]);
+        }
+
+        cout << solutionSize << endl;
+
+        std::remove(maxsatFile.c_str());
     }
     
     return 0;

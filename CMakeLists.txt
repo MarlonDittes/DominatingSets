@@ -11,4 +11,4 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra)
 endif()
 
-add_executable(main main.cpp graph.cpp hypergraph.cpp)
+add_executable(main main.cpp graph.cpp hypergraph2.cpp)
